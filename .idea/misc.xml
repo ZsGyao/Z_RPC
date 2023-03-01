@@ -5,16 +5,28 @@
     <option name="openedFilesInfos">
       <list>
         <OpenedFileInfo>
-          <option name="caretOffset" value="0" />
+          <option name="caretOffset" value="678" />
           <option name="fileUrl" value="file://$PROJECT_DIR$/CMakeLists.txt" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="340" />
+          <option name="caretOffset" value="444" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/coroutine.h" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="4751" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/log.h" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="0" />
           <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/coroutine.cpp" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="367" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/coroutine.h" />
+          <option name="caretOffset" value="5328" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/network/mutex.hpp" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="401" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/log.cpp" />
         </OpenedFileInfo>
       </list>
     </option>
