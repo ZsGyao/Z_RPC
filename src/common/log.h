@@ -96,10 +96,13 @@ namespace zrpc {
         std::stringstream m_ss;          // stream 流
     };
 
-    class LogTmp {
+    /**
+     * @brief 日志包装类，在析构时写入日志
+     */
+    class LogWarp {
     public:
-        LogTmp(LogEvent::ptr event);
-        ~LogTmp();
+        LogWarp(LogEvent::ptr event);
+        ~LogWarp();
         std::stringstream& getStringStream();
 
     private:
@@ -129,33 +132,45 @@ namespace zrpc {
         ~AsyncLogger();
 
         /**
-         * @brief
-         * @param buffer
+         * @brief 向任务队列中加入任务
+         * @param buffer 待写入的日志集合
          */
         void push(std::vector<std::string>& buffer);
 
+        /**
+         * @brief 将缓冲区的数据刷写到文件
+         */
         void flush();
 
-        static void* excute(void*);
+        /**
+         * @brief 执行异步写入日志
+         * @param arg 要写入的参数
+         * @return
+         */
+        static void* execute(void* arg);
 
+        /**
+         * @brief 停止异步写日志
+         */
         void stop();
 
     public:
-        std::queue<std::vector<std::string>> m_tasks; // 日志写入的任务队列
+        // 日志写入的任务队列，vector保存要写入的日志
+        std::queue<std::vector<std::string>> m_tasks;
 
     private:
-        const string   m_file_name;
-        const string   m_file_path;
-        int            m_max_size = 0;
-        LogType        m_log_type;
-        int            m_no;
-        bool           m_need_reopen = false;
-        FILE*          m_file_handle = nullptr;
-        std::string    m_date;
+        const string   m_file_name;               // 写入文件名
+        const string   m_file_path;               // 日志写入路径
+        int            m_max_size = 0;            // 写入单个文件最大大小
+        LogType        m_log_type;                // 日志类型
+        int            m_no;                      // 写入文件的下标
+        bool           m_need_reopen = false;     // 是否需要重新打开文件
+        FILE*          m_file_handle = nullptr;   // 文件句柄
+        std::string    m_date;                    // 日期
 
-        MutexType      m_mutex;
-        pthread_cond_t m_condition;
-        bool           m_stop = false;
+        MutexType      m_mutex;                   // 互斥量
+        pthread_cond_t m_condition;               // 线程初始化条件
+        bool           m_stop = false;            // 异步写入是否停止
 
     public:
         pthread_t m_thread;
@@ -197,9 +212,9 @@ namespace zrpc {
     private:
         Mutex            m_app_buff_mutex;
         Mutex            m_buff_mutex;
-        bool             m_is_init = false;
-        AsyncLogger::ptr m_async_rpc_logger;
-        AsyncLogger::ptr m_async_app_logger;
+        bool             m_is_init = false;    // 是否初始化
+        AsyncLogger::ptr m_async_rpc_logger;   // 异步写入rpc日志的AsyncLogger实例指针
+        AsyncLogger::ptr m_async_app_logger;   // 异步写入app日志的AsyncLogger实例指针
 
         int              m_sync_inteval = 0;
     };
