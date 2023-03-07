@@ -47,7 +47,7 @@ namespace zrpc {
         /**
          * @brief 析构函数
          */
-        ~Coroutine()
+        ~Coroutine();
 
         /**
          * @brief 设置协程回调函数
@@ -123,7 +123,7 @@ namespace zrpc {
         uint32_t              m_cor_stack_size = 0;         // 协程栈大小
         ucontext_t            m_cor_ctx;                    // 协程上下文
         void*                 m_cor_stack_ptr = nullptr;    // 协程栈地址
-        std::function<void()> m_cor_cb                      // 协程调度函数
+        std::function<void()> m_cor_cb;                      // 协程调度函数
         bool                  m_is_run_cor_func = false;    // 是否正在执行此协程的回调
         bool                  m_cor_can_resume = true;      // 是否可以唤醒协程
     };

@@ -19,19 +19,53 @@
 #include <queue>
 #include <semaphore.h>
 #include "src/network/mutex.hpp"
+#include "config.h"
 
 namespace zrpc {
 
-    /**
-     * @brief 日志级别枚举类
-     */
-    enum LogLevel {
-        DEBUG = 1,   // debug 信息
-        INFO  = 2,   // 一般 信息
-        WARN  = 3,   // 警告 信息
-        ERROR = 4,   // 错误 信息
-        NONE  = 5    // 不打印日志
-    };
+
+    extern zrpc::Config::ptr zRpcConfig;
+
+#define DebugLog \
+	if (zrpc::OpenLog() && zrpc::LogLevel::DEBUG >= zrpc::zRpcConfig->m_log_level) \
+		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::DEBUG, \
+        __FILE__, __LINE__, __func__, zrpc::LogType::RPC_LOG))).getStringStream()
+
+#define InfoLog \
+	if (zrpc::OpenLog() && zrpc::LogLevel::INFO >= zrpc::zRpcConfig->m_log_level) \
+		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::INFO, \
+        __FILE__, __LINE__, __func__, zrpc::LogType::RPC_LOG))).getStringStream()
+
+#define WarnLog \
+	if (zrpc::OpenLog() && zrpc::LogLevel::WARN >= zrpc::gRpcConfig->m_log_level) \
+		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::WARN, \
+        __FILE__, __LINE__, __func__, zrpc::LogType::RPC_LOG))).getStringStream()
+
+#define ErrorLog \
+	if (zrpc::OpenLog() && zrpc::LogLevel::ERROR >= zrpc::zRpcConfig->m_log_level) \
+		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::ERROR, \
+        __FILE__, __LINE__, __func__, zrpc::LogType::RPC_LOG))).getStringStream()
+
+#define AppDebugLog \
+	if (zrpc::OpenLog() && zrpc::LogLevel::DEBUG >= zrpc::zRpcConfig->m_log_level) \
+		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::DEBUG, \
+        __FILE__, __LINE__, __func__, zrpc::LogType::APP_LOG))).getStringStream()
+
+#define AppInfoLog \
+	if (zrpc::OpenLog() && zrpc::LogLevel::INFO >= zrpc::zRpcConfig->m_log_level) \
+		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::INFO, \
+        __FILE__, __LINE__, __func__, zrpc::LogType::APP_LOG))).getStringStream()
+
+#define AppWarnLog \
+	if (zrpc::OpenLog() && zrpc::LogLevel::WARN >= zrpc::zRpcConfig->m_log_level) \
+		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::WARN, \
+        __FILE__, __LINE__, __func__, zrpc::LogType::APP_LOG))).getStringStream()
+
+#define AppErrorLog \
+	if (zrpc::OpenLog() && zrpc::LogLevel::ERROR >= zrpc::zRpcConfig->m_log_level) \
+		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::ERROR, \
+        __FILE__, __LINE__, __func__, zrpc::LogType::APP_LOG))).getStringStream()
+
 
     enum LogType {
         RPC_LOG = 1, // RPC 系统日志
@@ -53,6 +87,12 @@ namespace zrpc {
     std::string levelToString(const LogLevel level);
 
     /**
+     * @brief 是否打开日志
+     * @return
+     */
+    bool OpenLog();
+
+    /**
      * @brief 日志事件类
      */
     class LogEvent {
@@ -67,7 +107,7 @@ namespace zrpc {
          * @param func_name 执行的函数名
          * @param type 日志类型
          */
-        LogEvent(LogLevel level, const std::string& file_name, int line, const std::string& func_name, LogType type);
+        LogEvent(LogLevel level, const char* file_name, int line, const char* func_name, LogType type);
 
         /**
          * @brief 析构函数
@@ -88,9 +128,9 @@ namespace zrpc {
         pid_t             m_pid = 0;     // 进程 id
         pid_t             m_tid = 0;     // 线程 id
         uint64_t          m_cor_id = 0;  // 协程 id
-        string            m_file_name;   // 文件名
+        const char*       m_file_name;   // 文件名
         int               m_line = 0;    // 行号
-        string            m_func_name;   //
+        const char*       m_func_name;   //
         LogType           m_type;        // 日志类型
         std::string       m_msg_no;      //
         std::stringstream m_ss;          // stream 流
@@ -124,7 +164,7 @@ namespace zrpc {
          * @param max_size 最大大小
          * @param type 日志类型
          */
-        AsyncLogger(const std::string& file_name, const std::string& file_path, int max_size, LogType type);
+        AsyncLogger(const char* file_name, const char* file_path, int max_size, LogType type);
 
         /**
          * @brief 析构函数
@@ -159,8 +199,8 @@ namespace zrpc {
         std::queue<std::vector<std::string>> m_tasks;
 
     private:
-        const string   m_file_name;               // 写入文件名
-        const string   m_file_path;               // 日志写入路径
+        const char*   m_file_name;               // 写入文件名
+        const char*   m_file_path;               // 日志写入路径
         int            m_max_size = 0;            // 写入单个文件最大大小
         LogType        m_log_type;                // 日志类型
         int            m_no;                      // 写入文件的下标
@@ -180,14 +220,15 @@ namespace zrpc {
     class Logger {
     public:
         typedef std::shared_ptr<Logger> ptr;
+        typedef Mutex MutexType;
 
         Logger();
 
         ~Logger();
 
-        void init(std::string& file_name, std::string& file_path, int max_size, int sync_inteval);
+        void init(const char* file_name, const char* file_path, int max_size, int sync_inteval);
 
-        void log();
+        // log();
         void pushRpcLog(const std::string& log_msg);
         void pushAppLog(const std::string& log_msg);
 
@@ -206,12 +247,12 @@ namespace zrpc {
         }
 
     public:
-        std::vector<std::string> m_buffer;
-        std::vector<std::string> m_app_buffer;
+        std::vector<std::string> m_rpc_buffer;     // 保存RPC日志
+        std::vector<std::string> m_app_buffer;     // 保存用户日志
 
     private:
-        Mutex            m_app_buff_mutex;
-        Mutex            m_buff_mutex;
+        MutexType        m_app_buff_mutex;
+        MutexType        m_rpc_buff_mutex;
         bool             m_is_init = false;    // 是否初始化
         AsyncLogger::ptr m_async_rpc_logger;   // 异步写入rpc日志的AsyncLogger实例指针
         AsyncLogger::ptr m_async_app_logger;   // 异步写入app日志的AsyncLogger实例指针

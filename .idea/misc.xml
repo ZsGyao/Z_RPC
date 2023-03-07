@@ -5,15 +5,15 @@
     <option name="openedFilesInfos">
       <list>
         <OpenedFileInfo>
-          <option name="caretOffset" value="678" />
+          <option name="caretOffset" value="1145" />
           <option name="fileUrl" value="file://$PROJECT_DIR$/CMakeLists.txt" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="444" />
+          <option name="caretOffset" value="2790" />
           <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/coroutine.h" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="5215" />
+          <option name="caretOffset" value="6559" />
           <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/log.h" />
         </OpenedFileInfo>
         <OpenedFileInfo>
@@ -21,16 +21,24 @@
           <option name="fileUrl" value="file://$PROJECT_DIR$/src/network/mutex.hpp" />
         </OpenedFileInfo>
         <OpenedFileInfo>
+          <option name="caretOffset" value="9996" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/log.cpp" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
           <option name="caretOffset" value="0" />
           <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/coroutine.cpp" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="25213" />
-          <option name="fileUrl" value="file:///usr/include/stdio.h" />
+          <option name="caretOffset" value="1487" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/config.h" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="9598" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/log.cpp" />
+          <option name="caretOffset" value="360" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/config/zrpc_server.xml" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="2817" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/config.cpp" />
         </OpenedFileInfo>
       </list>
     </option>

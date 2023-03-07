@@ -11,10 +11,13 @@
 #include "log.h"
 #include <atomic>
 #include <unistd.h>
+#include <stdio.h>
+#include <time.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <assert.h>
 #include <signal.h>
+#include <algorithm>
 #include "src/coroutine/coroutine.h"
 
 namespace zrpc {
@@ -23,9 +26,22 @@ namespace zrpc {
     /// APP_LOG类型日志写入的index
     static std::atomic <int64_t> g_app_log_index{0};
 
-    static thread_local pid_t
-    t_thread_id = 0;
-    static pid_t g_pid;
+    extern zrpc::Logger::ptr zRpcLogger;
+    extern zrpc::Config::ptr zRpcConfig;
+
+    void CoredumpHandler(int signal_no) {
+        ErrorLog << "progress received invalid signal, will exit";
+        printf("progress received invalid signal, will exit\n");
+        zRpcLogger->flush();
+        pthread_join(zRpcLogger->getAsyncLogger()->m_thread, nullptr);
+        pthread_join(zRpcLogger->getAsyncAppLogger()->m_thread, nullptr);
+
+        signal(signal_no, SIG_DFL);
+        raise(signal_no);
+    }
+
+    static thread_local pid_t t_thread_id = 0;
+    static pid_t g_pid = 0;
 
     pid_t gettid() {
         if (t_thread_id == 0) {
@@ -35,21 +51,22 @@ namespace zrpc {
     }
 
     LogLevel stringToLevel(const std::string& str) {
-        std::string s = ::toupper(str);
-        switch (str) {
-            case "DEBUG":
-                return LogLevel::DEBUG;
-            case "INFO":
-                return LogLevel::INFO;
-            case "WARN":
-                return LogLevel::WARN;
-            case "ERROR":
-                return LogLevel::ERROR;
-            case "NONE":
-                return LogLevel::NONE;
-            default:
-                return LogLevel::DEBUG;
-        }
+        if (str == "DEBUG")
+            return LogLevel::DEBUG;
+
+        if (str == "INFO")
+            return LogLevel::INFO;
+
+        if (str == "WARN")
+            return LogLevel::WARN;
+
+        if (str == "ERROR")
+            return LogLevel::ERROR;
+
+        if (str == "NONE")
+            return LogLevel::NONE;
+
+        return LogLevel::DEBUG;
     }
 
     std::string levelToString(const LogLevel level) {
@@ -75,8 +92,26 @@ namespace zrpc {
         }
     }
 
-    LogEvent::LogEvent(LogLevel level, const std::string& file_name, int line,
-                       const std::string& func_name, LogType type)
+    bool OpenLog() {
+        if (!zRpcLogger) {
+            return false;
+        }
+        return true;
+    }
+
+    std::string LogTypeToString(LogType logtype) {
+        switch (logtype) {
+            case APP_LOG:
+                return "app";
+            case RPC_LOG:
+                return "rpc";
+            default:
+                return "";
+        }
+    }
+
+    LogEvent::LogEvent(LogLevel level, const char* file_name, int line,
+                       const char* func_name, LogType type)
             : m_level(level),
               m_file_name(file_name),
               m_line(line),
@@ -106,6 +141,11 @@ namespace zrpc {
 
         std::string s_level = levelToString(m_level);
         m_ss << "[" << s_level << "]\t";
+
+        if(g_pid == 0) {
+            g_pid = getpid();
+        }
+        m_pid = g_pid;
 
         if(t_thread_id == 0) {
             t_thread_id = gettid();
@@ -140,7 +180,7 @@ namespace zrpc {
         return m_event->getStringStream();
     }
 
-    AsyncLogger::AsyncLogger(const std::string& file_name, const std::string& file_path, int max_size, LogType type)
+    AsyncLogger::AsyncLogger(const char* file_name, const char* file_path, int max_size, LogType type)
                  : m_file_name(file_name),
                    m_file_path(file_path),
                    m_max_size(max_size),
@@ -189,11 +229,11 @@ namespace zrpc {
         rt = sem_post(&ptr->m_semaphore);
         assert(rt == 0);
 
-        while (1) {
+        while (true) {
             MutexType::Lock lock(ptr->m_mutex);
 
             while (ptr->m_tasks.empty() && !ptr->m_stop) { // 如果任务队列为空 并且 写入未停止，线程条件等待
-                pthread_cond_wait(&(ptr->m_condition), ptr->m_mutex.getMutex);
+                pthread_cond_wait(&(ptr->m_condition), ptr->m_mutex.getMutex());
             }
 
             // 取出任务队列中的第一个任务
@@ -258,7 +298,7 @@ namespace zrpc {
             }
 
             // 开始写入，从vector中取出要写入的日志string
-            for(auto i : tmp) {
+            for(auto const& i : tmp) {
                 if (!i.empty()) {
                     fwrite(i.c_str(), 1, i.length(), ptr->m_file_handle);
                 }
@@ -294,12 +334,12 @@ namespace zrpc {
         pthread_join(m_async_rpc_logger->m_thread, nullptr); // 以join的方式结束 异步rpc日志 写入
     }
 
-    void Logger::init(std::string& file_name, std::string& file_path, int max_size, int sync_inteval) {
+    void Logger::init(const char* file_name, const char* file_path, int max_size, int sync_inteval) {
         if(!m_is_init) {
             m_sync_inteval = sync_inteval;
             for (int i = 0; i < 1000000; i++) {
-                m_app_buffer.push_back("");
-                m_buffer.push_back("");
+                m_app_buffer.emplace_back("");
+                m_rpc_buffer.emplace_back("");
             }
 
             m_async_rpc_logger = std::make_shared<AsyncLogger>(file_name, file_path, max_size, RPC_LOG);
@@ -318,19 +358,48 @@ namespace zrpc {
         }
     }
 
-    void Logger::log() {
-
-    }
+//    void Logger::log() {
+//
+//    }
 
     void Logger::pushRpcLog(const std::string& log_msg) {
-
+        MutexType::Lock lock(m_rpc_buff_mutex);
+        m_rpc_buffer.emplace_back(log_msg);
+        lock.unlock();
     }
 
-    void Logger::pushAppLog(const std::string& log_msg);
+    void Logger::pushAppLog(const std::string& log_msg) {
+        MutexType::Lock lock(m_app_buff_mutex);
+        m_app_buffer.emplace_back(log_msg);
+        lock.unlock();
+    }
 
-    void Logger::loopFunc();
+    void Logger::loopFunc() {
+        std::vector<std::string> app_tmp;
+        Mutex::Lock lock1(m_app_buff_mutex);
+        app_tmp.swap(m_app_buffer);      // 取出并清空 app日志
+        lock1.unlock();
 
-    void Logger::flush();
+        std::vector<std::string> rpc_tmp;
+        Mutex::Lock lock2(m_rpc_buff_mutex);
+        rpc_tmp.swap(m_rpc_buffer);         // 取出并清空 rpc日志
+        lock2.unlock();
 
-    void Logger::start();
+        m_async_rpc_logger->push(rpc_tmp);  // 将日志加入异步写日志线程任务队列
+        m_async_app_logger->push(app_tmp);
+    }
+
+    void Logger::flush() {
+        loopFunc();
+        m_async_rpc_logger->stop();
+        m_async_rpc_logger->flush();
+
+        m_async_app_logger->stop();
+        m_async_app_logger->flush();
+    }
+
+    void Logger::start() {
+        // TimerEvent::ptr event = std::make_shared<TimerEvent>(m_sync_inteval, true, std::bind(&Logger::loopFunc, this));
+        // Reactor::GetReactor()->getTimer()->addTimerEvent(event);
+    }
 }
