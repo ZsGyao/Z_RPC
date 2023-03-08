@@ -49,6 +49,14 @@ namespace zrpc {
         void readConf();
 
         /**
+         * @brief 获取配置项 name
+         * @param name 配置项名
+         * @return 配置项节点
+         */
+        tinyxml2::XMLElement* getXmlNode(const std::string& name);
+
+    private:
+        /**
          * @brief 读数据库配置
          * @param[in,out] node 传入xml节点，返回解析完的数据库配置
          */
@@ -66,25 +74,39 @@ namespace zrpc {
          */
         void readCoroutineConfig(tinyxml2::XMLElement* coroutine_node);
 
-        tinyxml2::XMLElement* getXmlNode(const std::string& name);
+        /**
+         * @brief 读time_wheel配置
+         * @param[in,out] time_wheel_node 传入xml节点，返回解析完的time_wheel配置
+         */
+        void readTimeWheelConfig(tinyxml2::XMLElement* time_wheel_node);
+
+        /**
+        * @brief 读server配置
+        * @param[in,out] server_node 传入xml节点，返回解析完的server配置
+        */
+        void readServerConfig(tinyxml2::XMLElement* server_node);
 
     public:
         // log parameters
         std::string m_log_path;                              // 日志存储路径
         std::string m_log_prefix;                            // 日志文件名
-        int         m_log_max_size      = 0;                 // 日志单个文件最大大小
+        int         m_log_max_file_size = 0;                 // 日志单个文件最大大小
         LogLevel    m_rpc_log_level     = LogLevel::DEBUG;   // rpc日志级别
         LogLevel    m_app_log_level     = LogLevel::DEBUG;   // app日志级别
         int         m_log_sync_interval = 500;               // 异步写入间隔
 
         // coroutine parameters
-        int m_cor_stack_size       = 0;    // 协程栈大小
-        int m_cor_pool_size        = 0;    // 协程池大小
-        int m_msg_req_len          = 0;    // 请求信息长度
-        int m_max_connect_timeout  = 0;    // ms
-        int m_iothread_num         = 0;    // io线程数
-        int m_timewheel_bucket_num = 0;    // 时间轮的bucket数
-        int m_timewheel_inteval    = 0;    // 时间轮更新时间
+        int m_cor_stack_size        = 0;    // 协程栈大小
+        int m_cor_pool_size         = 0;    // 协程池大小
+
+        // other
+        int m_msg_req_len           = 0;    // 请求信息长度
+        int m_max_connect_timeout   = 0;    // ms
+        int m_io_thread_num         = 0;    // io线程数
+
+        // time wheel
+        int m_time_wheel_bucket_num = 0;    // 时间轮的bucket数
+        int m_time_wheel_interval   = 0;    // 时间轮更新时间
 
     private:
         std::string            m_file_path;  // xml文件路径

@@ -27,42 +27,42 @@ namespace zrpc {
     extern zrpc::Config::ptr zRpcConfig;
 
 #define DebugLog \
-	if (zrpc::OpenLog() && zrpc::LogLevel::DEBUG >= zrpc::zRpcConfig->m_log_level) \
+	if (zrpc::OpenLog() && zrpc::LogLevel::DEBUG >= zrpc::zRpcConfig->m_rpc_log_level) \
 		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::DEBUG, \
         __FILE__, __LINE__, __func__, zrpc::LogType::RPC_LOG))).getStringStream()
 
 #define InfoLog \
-	if (zrpc::OpenLog() && zrpc::LogLevel::INFO >= zrpc::zRpcConfig->m_log_level) \
+	if (zrpc::OpenLog() && zrpc::LogLevel::INFO >= zrpc::zRpcConfig->m_rpc_log_level) \
 		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::INFO, \
         __FILE__, __LINE__, __func__, zrpc::LogType::RPC_LOG))).getStringStream()
 
 #define WarnLog \
-	if (zrpc::OpenLog() && zrpc::LogLevel::WARN >= zrpc::gRpcConfig->m_log_level) \
+	if (zrpc::OpenLog() && zrpc::LogLevel::WARN >= zrpc::gRpcConfig->m_rpc_log_level) \
 		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::WARN, \
         __FILE__, __LINE__, __func__, zrpc::LogType::RPC_LOG))).getStringStream()
 
 #define ErrorLog \
-	if (zrpc::OpenLog() && zrpc::LogLevel::ERROR >= zrpc::zRpcConfig->m_log_level) \
+	if (zrpc::OpenLog() && zrpc::LogLevel::ERROR >= zrpc::zRpcConfig->m_rpc_log_level) \
 		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::ERROR, \
         __FILE__, __LINE__, __func__, zrpc::LogType::RPC_LOG))).getStringStream()
 
 #define AppDebugLog \
-	if (zrpc::OpenLog() && zrpc::LogLevel::DEBUG >= zrpc::zRpcConfig->m_log_level) \
+	if (zrpc::OpenLog() && zrpc::LogLevel::DEBUG >= zrpc::zRpcConfig->m_app_log_level) \
 		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::DEBUG, \
         __FILE__, __LINE__, __func__, zrpc::LogType::APP_LOG))).getStringStream()
 
 #define AppInfoLog \
-	if (zrpc::OpenLog() && zrpc::LogLevel::INFO >= zrpc::zRpcConfig->m_log_level) \
+	if (zrpc::OpenLog() && zrpc::LogLevel::INFO >= zrpc::zRpcConfig->m_app_log_level) \
 		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::INFO, \
         __FILE__, __LINE__, __func__, zrpc::LogType::APP_LOG))).getStringStream()
 
 #define AppWarnLog \
-	if (zrpc::OpenLog() && zrpc::LogLevel::WARN >= zrpc::zRpcConfig->m_log_level) \
+	if (zrpc::OpenLog() && zrpc::LogLevel::WARN >= zrpc::zRpcConfig->m_app_log_level) \
 		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::WARN, \
         __FILE__, __LINE__, __func__, zrpc::LogType::APP_LOG))).getStringStream()
 
 #define AppErrorLog \
-	if (zrpc::OpenLog() && zrpc::LogLevel::ERROR >= zrpc::zRpcConfig->m_log_level) \
+	if (zrpc::OpenLog() && zrpc::LogLevel::ERROR >= zrpc::zRpcConfig->m_app_log_level) \
 		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::ERROR, \
         __FILE__, __LINE__, __func__, zrpc::LogType::APP_LOG))).getStringStream()
 

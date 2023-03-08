@@ -163,7 +163,7 @@ namespace zrpc {
 
     void LogEvent::log() {
         m_ss << "\n";
-        if(m_level >= zRpcConfig->m_log_level && m_type == RPC_LOG) {
+        if(m_level >= zRpcConfig->m_rpc_log_level && m_type == RPC_LOG) {
             zRpcLogger->pushRpcLog(m_ss.str());
         } else if (m_level >= zRpcConfig->m_app_log_level && m_type == APP_LOG) {
             zRpcLogger->pushAppLog(m_ss.str());

@@ -18,31 +18,42 @@
 namespace zrpc {
 
     /**
-     * @brief 获取协程id
-     * @return
-     */
-    int getCoroutineIndex();
-
-    /**
      * @brief 协程类
      */
-    class Coroutine {
+    class Coroutine : std::enable_shared_from_this<Coroutine> {
     public:
         typedef std::shared_ptr<Coroutine> ptr;
+
+        /**
+         * @brief 协程状态
+         * @details 定义三态转换关系，也就是协程要么正在运行(RUNNING)，要么准备运行(READY)，要么运行结束(TERM)。
+         *          不区分协程的初始状态，初始即READY。不区分协程是异常结束还是正常结束，
+         *          只要结束就是TERM状态。也不区别HOLD状态，协程只要未结束也非运行态，那就是READY状态。
+         */
+        enum State {
+            /// 就绪态，刚创建或者yield之后的状态
+            READY,
+            /// 运行态，resume之后的状态
+            RUNNING,
+            /// 结束态，协程的回调函数执行完之后为TERM状态
+            TERM
+        };
 
     private:
         /**
          * @brief 私有构造
+         * @attention 无参构造函数只用于创建线程的第一个协程，也就是线程主函数对应的协程，
+         *            这个协程只能由GetMainCoroutine()方法调用，所以定义成私有方法
          */
         Coroutine();
 
     public:
         /**
-         * @brief 协程构造
+         * @brief 协程构造, 用于创建用户协程
          * @param[in] stack_size 协程栈大小
-         * @param[in] cb 协程回调
+         * @param[in] cb 协程执行的回调函数
          */
-        Coroutine(size_t stack_size, std::function<void()> cb);
+        Coroutine( std::function<void()> cb, size_t stack_size = 0);
 
         /**
          * @brief 析构函数
@@ -50,61 +61,62 @@ namespace zrpc {
         ~Coroutine();
 
         /**
-         * @brief 设置协程回调函数
-         * @param[in] cb 协程回调函数
-         * @return true:设置成功  false：设置失败
+         * @brief 挂起协程，当前协程让出执行权
+         * @details 当前协程与上次resume时退到后台的协程进行交换，前者状态变为READY，后者状态变为RUNNING
          */
-        bool setCallBack(std::function<void()> cb);
+        void yield();
 
         /**
-         * @brief 返回协程id
+         * @brief 唤醒传入协程，将当前协程切到到执行状态
+         * @details 当前协程和正在运行的协程进行交换，前者状态变为RUNNING，后者状态变为READY
+         * @param[in] cor
+         */
+        void resume();
+
+
+        /**
+         * @brief 重置协程回调函数, 复用栈空间，不重新创建栈
+         * @param[in] cb 协程回调函数
+         */
+        void resetCallBack(std::function<void()> cb);
+
+        /**
+         * @brief 获取协程id
          * @return 协程id
          */
         uint64_t getCorId() const {
             return m_cor_id;
         }
 
-        /**
-         * @brief 设置是否正在执行此协程的回调
-         * @param[in] v true or false
-         */
-        void setIsRunCorFunc(const bool v) {
-            m_is_run_cor_func = v;
+       /**
+        * @brief 获取协程状态
+        */
+        State getState() const {
+            return m_cor_state;
         }
 
         /**
-         * @brief 获取是否正在执行此协程的回调
-         * @return true: 正在执行  false：不在执行
+         * @brief 判断当前协程是否是主协程
+         * @return true  false
          */
-        bool getIsRunCorFunc() const {
-            return m_is_run_cor_func;
-        }
-
-        /**
-         * @brief 设置是否可以唤醒协程
-         * @param[in] v true or false
-         */
-        void setCanResume(bool v) {
-            m_cor_can_resume = v;
-        }
+        bool isMainCoroutine();
 
     public:
         /**
-         * @brief 挂起协程
+         * @brief 协程入口函数
          */
-        static void Yield();
+        static void MainFunc();
 
         /**
-         * @brief 唤醒传入协程
-         * @param[in] cor
+         * @brief 初始化主协程
          */
-        static void Resume(Coroutine* cor);
+        static void InitMainCoroutine();
 
         /**
          * @brief 获取当前线程正在运行的协程
          * @return 当前线程正在运行的协程
          */
-        static Coroutine* GetCurrentCoroutine();
+        static Coroutine::ptr GetCurrentCoroutine();
 
         /**
          * @brief 获取当前线程的主协程
@@ -113,19 +125,23 @@ namespace zrpc {
         static Coroutine* GetMainCoroutine();
 
         /**
-         * @brief 判断当前协程是否是主协程
-         * @return true  false
+         * @brief 获取总协程数
          */
-        static bool IsMainCoroutine();
+        static uint64_t TotalCoroutines();
+
+        /**
+         * @brief 获取当前正在运行的协程id
+         * @return
+         */
+        static uint64_t getCurrentCoroutineId();
 
     private:
-        uint64_t              m_cor_id = 0;                 // 协程id
-        uint32_t              m_cor_stack_size = 0;         // 协程栈大小
-        ucontext_t            m_cor_ctx;                    // 协程上下文
-        void*                 m_cor_stack_ptr = nullptr;    // 协程栈地址
-        std::function<void()> m_cor_cb;                      // 协程调度函数
-        bool                  m_is_run_cor_func = false;    // 是否正在执行此协程的回调
-        bool                  m_cor_can_resume = true;      // 是否可以唤醒协程
+        uint64_t              m_cor_id          = 0;                 // 协程id
+        uint32_t              m_cor_stack_size  = 0;                 // 协程栈大小
+        State                 m_cor_state       = READY;             // 协程状态
+        ucontext_t            m_cor_ctx;                             // 协程上下文
+        void*                 m_cor_stack_ptr   = nullptr;           // 协程栈地址
+        std::function<void()> m_cor_cb;                              // 协程调度函数
     };
 }
 

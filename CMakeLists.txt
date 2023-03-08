@@ -30,6 +30,7 @@ set(LIB_SRC
         src/common/log.cpp
         src/common/noncopyable.hpp
         src/common/config.cpp
+        src/common/macro.hpp
         src/coroutine/coroutine.cpp
         src/network/mutex.hpp
         )
