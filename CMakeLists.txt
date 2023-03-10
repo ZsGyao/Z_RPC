@@ -27,12 +27,16 @@ include_directories(src/network)
 option(BUILD_TEST "ON for complile test" ON)
 
 set(LIB_SRC
-        src/common/log.cpp
-        src/common/noncopyable.hpp
         src/common/config.cpp
+        src/common/config.h
+        src/common/log.cpp
+        src/common/log.h
+        src/common/noncopyable.hpp
         src/common/macro.hpp
         src/coroutine/coroutine.cpp
+        src/coroutine/coroutine.h
         src/network/mutex.hpp
+        src/common/singleton.hpp
         )
 
 add_library(src SHARED ${LIB_SRC})
@@ -40,7 +44,18 @@ force_redefine_file_macro_for_sources(src)
 
 set(LIBS
         src
-        tinyxml2)
+        tinyxml2
+        )
+
+add_executable(test_coroutine tests/test_coroutine.cpp)
+add_dependencies(test_coroutine src)
+force_redefine_file_macro_for_sources(test_coroutine)  #__FILE__
+target_link_libraries(test_coroutine ${LIBS})
+
+add_executable(test_log tests/test_log.cpp)
+add_dependencies(test_log src)
+force_redefine_file_macro_for_sources(test_log)  #__FILE__
+target_link_libraries(test_log ${LIBS})
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)

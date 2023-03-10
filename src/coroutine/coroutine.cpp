@@ -10,6 +10,7 @@
 
 #include "coroutine.h"
 #include <atomic>
+#include <iostream>
 #include "common/log.h"
 #include "common/macro.hpp"
 #include "common/config.h"
@@ -21,13 +22,14 @@ namespace zrpc {
     /// 当前线程正在运行的协程
     static thread_local Coroutine* t_current_coroutine = nullptr;
 
+    static thread_local RunTime* t_current_run_time = nullptr;
+
     /// 全局静态变量，用于统计当前协程数量
     static std::atomic<uint64_t> s_coroutine_count{0};
 
     /// 全局静态变量，用于生成当前协程id
     static std::atomic<uint64_t> s_current_coroutine_id{0};
 
-    static Config::ptr g_config = std::make_shared<Config>("Z_RPC/config/zrpc_server.xml");
 
     /**
      * @brief malloc栈内存分配器
@@ -41,25 +43,35 @@ namespace zrpc {
 
     using StackAllocator = MallocStackAllocator;
 
+    extern std::shared_ptr<Config> zRpcConfig;
 
     Coroutine::Coroutine() {
         t_current_coroutine = this;                         // 此时当前协程就是主协程
         m_cor_state         = RUNNING;
+
         if(getcontext(&m_cor_ctx)) {                    // 将当前上下文保存到 m_cor_ctx
             ZRPC_ASSERT2(false, "getcontext");
         }
+
         m_cor_id            = s_current_coroutine_id++;     // 主协程 id = 0 , 赋值后 +1
         s_coroutine_count++;                                // 协程总数加一
 
+        std::cout << "debug cor construct " << std::endl;
         DebugLog << "main coroutine [ id:" << m_cor_id << " ] create";
+        std::cout << "debug cor construct ____" << std::endl;
     }
 
     Coroutine::Coroutine(std::function<void()> cb, size_t stack_size)
             : m_cor_id(s_current_coroutine_id++),
               m_cor_cb(std::move(cb)) {
+    //    std::cout << "debug reach cor construct1" << std::endl;
+
         s_coroutine_count++;
         // TODO 配置中的参数加入 test
-        m_cor_stack_size = stack_size ? stack_size : g_config->m_cor_stack_size; // 是否选用配置
+        // std::cout << "debug reach cor construct______" << std::endl;
+
+        //m_cor_stack_size = stack_size ? stack_size : zRpcConfig->m_cor_stack_size; // 是否选用配置
+        m_cor_stack_size = stack_size ? stack_size : zrpc::zRpcConfig->m_cor_stack_size;
         m_cor_stack_ptr  = StackAllocator::Alloc(m_cor_stack_size);
 
         if(getcontext(&m_cor_ctx)) { // 将ucp初始化并保存当前的上下文。
@@ -72,19 +84,39 @@ namespace zrpc {
         // 对上下文进行处理，可以创建一个新的上下文
         makecontext(&m_cor_ctx, &Coroutine::MainFunc, 0);
 
+   //     std::cout << "debug reach cor construct2" << std::endl;
+        DebugLog << "coroutine [ id:" << m_cor_id << " ] create";
+    }
+
+    Coroutine::Coroutine(std::function<void()> cb, RunTime* run_time, size_t stack_size)
+            : m_cor_id(s_current_coroutine_id++),
+              m_cor_cb(std::move(cb)),
+              m_cor_run_time(run_time){
+        s_coroutine_count++;
+        m_cor_stack_size = stack_size ? stack_size : zrpc::zRpcConfig->m_cor_stack_size;
+        m_cor_stack_ptr  = StackAllocator::Alloc(m_cor_stack_size);
+
+        if(getcontext(&m_cor_ctx)) {
+            ZRPC_ASSERT2(false, "getcontext");
+        }
+
+        m_cor_ctx.uc_link          = nullptr;
+        m_cor_ctx.uc_stack.ss_sp   = m_cor_stack_ptr;
+        m_cor_ctx.uc_stack.ss_size = m_cor_stack_size;
+
+        makecontext(&m_cor_ctx, &Coroutine::MainFunc, 0);
+
         DebugLog << "coroutine [ id:" << m_cor_id << " ] create";
     }
 
     /* 线程的主协程析构时需要特殊处理，因为主协程没有分配栈和cb */
     Coroutine::~Coroutine() {
-        DebugLog << "~coroutine [ id:" << m_cor_id << " ] destroy";
-
         s_coroutine_count--;
         if(m_cor_stack_ptr) {
             // 有栈，说明是子协程，需要确保子协程一定是结束状态
             ZRPC_ASSERT(m_cor_state == TERM);
             StackAllocator::Dealloc(m_cor_stack_ptr, m_cor_stack_size);
-            DebugLog << "dealloc stack, coroutine [ id:" << m_cor_id << " ]";
+   //         DebugLog << "dealloc stack, coroutine [ id:" << m_cor_id << " ]";
         } else {
             // 没有栈，说明是线程的主协程
             ZRPC_ASSERT(!m_cor_cb);               // 主协程没有cb
@@ -95,6 +127,8 @@ namespace zrpc {
                 t_main_coroutine = nullptr;
             }
         }
+
+        DebugLog << "~coroutine [ id:" << m_cor_id << " ] destroy  [ total:" << s_coroutine_count << " ]";
     }
 
     /* 这里为了简化状态管理，强制只有TERM状态的协程才可以重置，但其实刚创建好但没执行过的协程也应该允许重置的 */
@@ -127,6 +161,9 @@ namespace zrpc {
     void Coroutine::yield() {
         ZRPC_ASSERT(m_cor_state == RUNNING || m_cor_state == TERM);
         t_current_coroutine = t_main_coroutine.get();
+
+        t_current_run_time = nullptr;
+
         if(m_cor_state != TERM) { // 子协程没执行完，还可以回来继续执行
             m_cor_state = READY;
         }
@@ -137,13 +174,22 @@ namespace zrpc {
     }
 
     void Coroutine::resume() {
+       // std::cout << "reach resume" << std::endl;
+
         ZRPC_ASSERT(m_cor_state != RUNNING && m_cor_state != TERM); // 当前实例还是子协程，处于READY状态
         t_current_coroutine = this;
+
+        t_current_run_time  = this->getRunTime();
+
         m_cor_state = RUNNING;
+
+      //  std::cout << "reach resume______" << std::endl;
 
         if(swapcontext(&(t_main_coroutine->m_cor_ctx), &m_cor_ctx)) {
             ZRPC_ASSERT2(false, "swapcontext");
         }
+
+      //  std::cout << "reach resume******" << std::endl;
     }
 
     void Coroutine::MainFunc() {
@@ -160,11 +206,13 @@ namespace zrpc {
     }
 
     void Coroutine::InitMainCoroutine() {
+        // std::cout << "debug get init" << std::endl;
+
         if(t_main_coroutine) {
             ZRPC_ASSERT2(false, "main coroutine have already init");
         }
 
-        Coroutine::ptr main_cor(new Coroutine);            // 初始化调用私有构造，创建主协程
+        Coroutine::ptr main_cor(new Coroutine());            // 初始化调用私有构造，创建主协程
         ZRPC_ASSERT(t_current_coroutine == main_cor.get());  // 在构造主协程时已经把t_current_coroutine设置为主协程
         t_main_coroutine = main_cor;                         // 设置 t_main_coroutine
     }
@@ -181,6 +229,10 @@ namespace zrpc {
             ZRPC_ASSERT2(false, "t_main_coroutine not init, try to call InitMainCoroutine()");
         }
         return t_main_coroutine.get();
+    }
+
+    RunTime* Coroutine::getCurrentRunTime() {
+        return t_current_run_time;
     }
 
     uint64_t Coroutine::TotalCoroutines() {

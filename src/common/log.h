@@ -19,12 +19,11 @@
 #include <queue>
 #include <semaphore.h>
 #include "src/network/mutex.hpp"
-#include "config.h"
+#include "src/common/config.h"
 
 namespace zrpc {
 
-
-    extern zrpc::Config::ptr zRpcConfig;
+     extern std::shared_ptr<Config> zRpcConfig;
 
 #define DebugLog \
 	if (zrpc::OpenLog() && zrpc::LogLevel::DEBUG >= zrpc::zRpcConfig->m_rpc_log_level) \
@@ -37,7 +36,7 @@ namespace zrpc {
         __FILE__, __LINE__, __func__, zrpc::LogType::RPC_LOG))).getStringStream()
 
 #define WarnLog \
-	if (zrpc::OpenLog() && zrpc::LogLevel::WARN >= zrpc::gRpcConfig->m_rpc_log_level) \
+	if (zrpc::OpenLog() && zrpc::LogLevel::WARN >= zrpc::zRpcConfig->m_rpc_log_level) \
 		zrpc::LogWarp(zrpc::LogEvent::ptr(new zrpc::LogEvent(zrpc::LogLevel::WARN, \
         __FILE__, __LINE__, __func__, zrpc::LogType::RPC_LOG))).getStringStream()
 
@@ -120,6 +119,9 @@ namespace zrpc {
          */
         std::stringstream& getStringStream();
 
+        /**
+         * @brief 在包装类析构时调用写入日志
+         */
         void log();
 
     private:
@@ -141,10 +143,9 @@ namespace zrpc {
      */
     class LogWarp {
     public:
-        LogWarp(LogEvent::ptr event);
+        explicit LogWarp(LogEvent::ptr event);
         ~LogWarp();
         std::stringstream& getStringStream();
-
     private:
         LogEvent::ptr m_event;
     };
@@ -185,7 +186,7 @@ namespace zrpc {
         /**
          * @brief 执行异步写入日志
          * @param arg 要写入的参数
-         * @return
+         * @attention 当条件m_condition满足被唤醒时，就开始写入硬盘
          */
         static void* execute(void* arg);
 
@@ -199,22 +200,22 @@ namespace zrpc {
         std::queue<std::vector<std::string>> m_tasks;
 
     private:
-        const char*   m_file_name;               // 写入文件名
-        const char*   m_file_path;               // 日志写入路径
+        const char*    m_file_name;                // 写入文件名
+        const char*    m_file_path;                // 日志写入路径
         int            m_max_size = 0;            // 写入单个文件最大大小
         LogType        m_log_type;                // 日志类型
-        int            m_no;                      // 写入文件的下标
+        int            m_no{};                    // 写入文件的下标
         bool           m_need_reopen = false;     // 是否需要重新打开文件
         FILE*          m_file_handle = nullptr;   // 文件句柄
         std::string    m_date;                    // 日期
 
         MutexType      m_mutex;                   // 互斥量
-        pthread_cond_t m_condition;               // 线程初始化条件
+        pthread_cond_t m_condition{};             // 线程初始化条件
         bool           m_stop = false;            // 异步写入是否停止
 
     public:
-        pthread_t m_thread;
-        sem_t     m_semaphore;
+        pthread_t m_thread{};
+        sem_t     m_semaphore{};
     };
 
     class Logger {
@@ -226,16 +227,25 @@ namespace zrpc {
 
         ~Logger();
 
-        void init(const char* file_name, const char* file_path, int max_size, int sync_inteval);
+        void init(const char* file_name, const char* file_path, int max_size, int sync_interval);
 
-        // log();
+        // void log();
         void pushRpcLog(const std::string& log_msg);
         void pushAppLog(const std::string& log_msg);
 
+        /**
+         * @brief 取出保存在日志器中的任务，以定时任务的形式，加入异步日志器，去写入
+         */
         void loopFunc();
 
+        /**
+         * @brief 停止并强制写入所有的日志
+         */
         void flush();
 
+        /**
+         * @brief 启动日志器
+         */
         void start();
 
         AsyncLogger::ptr getAsyncLogger() {
@@ -257,8 +267,10 @@ namespace zrpc {
         AsyncLogger::ptr m_async_rpc_logger;   // 异步写入rpc日志的AsyncLogger实例指针
         AsyncLogger::ptr m_async_app_logger;   // 异步写入app日志的AsyncLogger实例指针
 
-        int              m_sync_inteval = 0;
+        int              m_sync_interval = 0;
     };
+
+    extern zrpc::Logger::ptr zRpcLogger;
 }
 
 

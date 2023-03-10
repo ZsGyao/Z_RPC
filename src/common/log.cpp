@@ -8,7 +8,6 @@
   ******************************************************************************
   */
 
-#include "log.h"
 #include <atomic>
 #include <unistd.h>
 #include <stdio.h>
@@ -17,17 +16,22 @@
 #include <sys/time.h>
 #include <assert.h>
 #include <signal.h>
+#include <iostream>
 #include <algorithm>
+#include "src/common/log.h"
 #include "src/coroutine/coroutine.h"
 
+
 namespace zrpc {
+
+    extern zrpc::Logger::ptr zRpcLogger;
+    // extern std::shared_ptr<Config> zRpcConfig;
+   // extern std::shared_ptr<Config> zRpcConfig;
+
     /// RPC_LOG类型日志写入的index
     static std::atomic <int64_t> g_rpc_log_index{0};
     /// APP_LOG类型日志写入的index
     static std::atomic <int64_t> g_app_log_index{0};
-
-    extern zrpc::Logger::ptr zRpcLogger;
-    extern zrpc::Config::ptr zRpcConfig;
 
     void CoredumpHandler(int signal_no) {
         ErrorLog << "progress received invalid signal, will exit";
@@ -124,7 +128,6 @@ namespace zrpc {
 
     }
 
-
     std::stringstream& LogEvent::getStringStream() {
         gettimeofday(&m_timeval, nullptr);
 
@@ -156,16 +159,36 @@ namespace zrpc {
 
         m_ss << "[" << m_pid << "]\t"
              << "[" << m_tid << "]\t"
-             << "[" << m_cor_id << "]\t";
+             << "[" << m_cor_id << "]\t"
+             << "[" << m_file_name << ":" << m_line << "]\t";
+
+        RunTime* runtime = Coroutine::getCurrentRunTime();
+        if (runtime) {
+            std::string msgno = runtime->m_msg_no;
+            if (!msgno.empty()) {
+                m_ss << "[" << msgno << "]\t";
+            }
+
+            std::string interface_name = runtime->m_interface_name;
+            if (!interface_name.empty()) {
+                m_ss << "[" << interface_name << "]\t";
+            }
+
+        }
 
         return m_ss;
     }
 
+    /**
+     * 比如写入一个 DebugLog << "Hello zRPC Log";
+     * 1. 调用宏，LogWarp包装一个 log_event，在运行完这一行，到下一行时，LogWarp析构，调用 log_event->log()
+     * 2. 根据 log_event 类型将 流保存到不同的容器中
+     */
     void LogEvent::log() {
         m_ss << "\n";
-        if(m_level >= zRpcConfig->m_rpc_log_level && m_type == RPC_LOG) {
-            zRpcLogger->pushRpcLog(m_ss.str());
-        } else if (m_level >= zRpcConfig->m_app_log_level && m_type == APP_LOG) {
+        if(m_level >= zrpc::zRpcConfig->m_rpc_log_level && m_type == RPC_LOG) {  // 如果日志事件是 RPC_LOG
+            zRpcLogger->pushRpcLog(m_ss.str());                           // 把写入的
+        } else if (m_level >= zrpc::zRpcConfig->m_app_log_level && m_type == APP_LOG) {  // 如果日志事件是 APP_LOG
             zRpcLogger->pushAppLog(m_ss.str());
         }
     }
@@ -176,7 +199,7 @@ namespace zrpc {
         m_event->log();
     }
 
-    std::stringstream &LogWarp::getStringStream() {
+    std::stringstream& LogWarp::getStringStream() {
         return m_event->getStringStream();
     }
 
@@ -187,6 +210,17 @@ namespace zrpc {
                    m_log_type(type) {
         int rt = sem_init(&m_semaphore, 0, 0);
         assert(rt == 0);
+
+        // 获取当前时间并格式化
+        timeval now;
+        gettimeofday(&now, nullptr);
+        struct tm now_time;
+        localtime_r(&(now.tv_sec), &now_time);
+
+        const char* format = "%Y-%m-%d";    // 2023-03-10
+        char date[32];
+        strftime(date, sizeof(date), format, &now_time);
+        m_date = std::string(date);
 
         /* Create a new thread, starting with execution of START-ROUTINE
            getting passed ARG.  Creation attributed come from ATTR.  The new
@@ -217,7 +251,11 @@ namespace zrpc {
         }
     }
 
+    /* 当条件m_condition满足被唤醒时，就开始写入硬盘 */
     void* AsyncLogger::execute(void* arg) {
+
+        // std::cout << "debug reach execute *****" << std::endl;
+
         // 获取当前AsyncLogger实例
         AsyncLogger* ptr = reinterpret_cast<AsyncLogger*>(arg);
         /* Initialize condition variable COND using attributes ATTR, or use
@@ -232,9 +270,11 @@ namespace zrpc {
         while (true) {
             MutexType::Lock lock(ptr->m_mutex);
 
-            while (ptr->m_tasks.empty() && !ptr->m_stop) { // 如果任务队列为空 并且 写入未停止，线程条件等待
+            while (ptr->m_tasks.empty() && !ptr->m_stop) { // 如果任务队列为空 并且写入未停止，线程条件等待
                 pthread_cond_wait(&(ptr->m_condition), ptr->m_mutex.getMutex());
             }
+
+             std::cout << "debug reach execute, get task *****" << std::endl;
 
             // 取出任务队列中的第一个任务
             std::vector<std::string> tmp;
@@ -249,7 +289,7 @@ namespace zrpc {
             struct tm now_time;
             localtime_r(&(now.tv_sec), &now_time);
 
-            const char* format = "%Y%m%d";
+            const char* format = "%Y-%m-%d";    // 2023-03-10
             char date[32];
             strftime(date, sizeof(date), format, &now_time);
 
@@ -266,7 +306,7 @@ namespace zrpc {
             }
 
             std::stringstream ss;
-            ss << ptr->m_file_path << ptr->m_file_name << "_" << ptr->m_date << "_" << LogTypeToString(ptr->m_log_type) << "_" << ptr->m_no << ".log";
+            ss << ptr->m_file_path << "/" << ptr->m_file_name << "_" << ptr->m_date << "_" << LogTypeToString(ptr->m_log_type) << "_" << ptr->m_no << ".log";
             std::string full_file_name = ss.str();  // 从流中生成日志文件名
 
             if (ptr->m_need_reopen) { // 如果需要重新打开
@@ -285,7 +325,7 @@ namespace zrpc {
                 // single log file over max size
                 ptr->m_no++;                                         // 写入日志文件名角标加一
                 std::stringstream ss2;
-                ss2 << ptr->m_file_path << ptr->m_file_name << "_" << ptr->m_date << "_" << LogTypeToString(ptr->m_log_type) << "_" << ptr->m_no << ".log";
+                ss2 << ptr->m_file_path << "/" << ptr->m_file_name << "_" << ptr->m_date << "_" << LogTypeToString(ptr->m_log_type) << "_" << ptr->m_no << ".log";
                 full_file_name = ss2.str();   // 从流中生成日志文件名
 
                 // printf("open file %s", full_file_name.c_str());
@@ -296,6 +336,8 @@ namespace zrpc {
             if (!ptr->m_file_handle) {
                 printf("open log file %s error!", full_file_name.c_str());
             }
+
+            //std::cout << "debug reach execute, before write" << std::endl;
 
             // 开始写入，从vector中取出要写入的日志string
             for(auto const& i : tmp) {
@@ -334,13 +376,15 @@ namespace zrpc {
         pthread_join(m_async_rpc_logger->m_thread, nullptr); // 以join的方式结束 异步rpc日志 写入
     }
 
-    void Logger::init(const char* file_name, const char* file_path, int max_size, int sync_inteval) {
+    void Logger::init(const char* file_name, const char* file_path, int max_size, int sync_interval) {
         if(!m_is_init) {
-            m_sync_inteval = sync_inteval;
+            m_sync_interval = sync_interval;
             for (int i = 0; i < 1000000; i++) {
                 m_app_buffer.emplace_back("");
                 m_rpc_buffer.emplace_back("");
             }
+//            m_app_buffer.resize(1000000);
+//            m_rpc_buffer.resize(1000000);
 
             m_async_rpc_logger = std::make_shared<AsyncLogger>(file_name, file_path, max_size, RPC_LOG);
             m_async_app_logger = std::make_shared<AsyncLogger>(file_name, file_path, max_size, APP_LOG);
@@ -374,10 +418,11 @@ namespace zrpc {
         lock.unlock();
     }
 
+    // TODO 作一个定时任务，异步日志器来刷写，定时时常由配置中log_sync_interval给出
     void Logger::loopFunc() {
         std::vector<std::string> app_tmp;
         Mutex::Lock lock1(m_app_buff_mutex);
-        app_tmp.swap(m_app_buffer);      // 取出并清空 app日志
+        app_tmp.swap(m_app_buffer);         // 取出并清空 app日志
         lock1.unlock();
 
         std::vector<std::string> rpc_tmp;
@@ -399,7 +444,7 @@ namespace zrpc {
     }
 
     void Logger::start() {
-        // TimerEvent::ptr event = std::make_shared<TimerEvent>(m_sync_inteval, true, std::bind(&Logger::loopFunc, this));
+        // TimerEvent::ptr event = std::make_shared<TimerEvent>(m_sync_interval, true, std::bind(&Logger::loopFunc, this));
         // Reactor::GetReactor()->getTimer()->addTimerEvent(event);
     }
 }

@@ -16,7 +16,7 @@
 #include <memory>
 #include <map>
 #include <tinyxml2.h>
-
+#include "src/common/singleton.hpp"
 
 namespace zrpc {
 
@@ -31,10 +31,14 @@ namespace zrpc {
         NONE  = 5    // 不打印日志
     };
 
+    /**
+     * @brief 配置类，将配置类作为单例，成员变量保存配置内容
+     */
     class Config {
     public:
         typedef std::shared_ptr<Config> ptr;
 
+    public:
         /**
          * @brief 构造
          * @param file_path config路径
@@ -86,6 +90,12 @@ namespace zrpc {
         */
         void readServerConfig(tinyxml2::XMLElement* server_node);
 
+        /**
+        * @brief 读自己就是第一标签的配置
+        * @param[in,out] other_node 传入xml节点，返回解析完的配置
+        */
+        void readOtherConfig(tinyxml2::XMLElement* other_node);
+
     public:
         // log parameters
         std::string m_log_path;                              // 日志存储路径
@@ -108,10 +118,22 @@ namespace zrpc {
         int m_time_wheel_bucket_num = 0;    // 时间轮的bucket数
         int m_time_wheel_interval   = 0;    // 时间轮更新时间
 
+        // TODO server
+        std::string m_server_ip;           // 网络ip
+        uint16_t    m_server_port = 0;     // 网络端口
+        std::string m_server_protocal;     // 协议类型 HTTP or TCP
+
+        // TODO database
+
+
     private:
         std::string            m_file_path;  // xml文件路径
         tinyxml2::XMLDocument* m_xml_file;   // xml文件
     };
+
+    typedef zrpc::Singleton<Config> Singleton_Conf;
+    /* 一个全局变量，在头文件中用extern 声明 cpp中实现 。 多次声明，一次实现 */
+    extern std::shared_ptr<Config> zRpcConfig;
 }
 
 #endif //Z_RPC_CONFIG_H

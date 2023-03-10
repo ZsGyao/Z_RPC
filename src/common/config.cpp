@@ -8,33 +8,35 @@
   ******************************************************************************
   */
 
-#include "config.h"
-#include "log.h"
+#include "src/common/config.h"
+#include "src/common/log.h"
 #include <iostream>
+#include <algorithm>
 
 namespace zrpc {
 
-    extern zrpc::Logger::ptr zRpcLogger;
-   // extern zrpc::TcpServer::ptr gRpcServer;
+    zrpc::Logger::ptr zRpcLogger;
+    // extern zrpc::TcpServer::ptr gRpcServer;
 
     Config::Config(const char* file_path) : m_file_path(file_path) {
         m_xml_file = new tinyxml2::XMLDocument();
-        bool rt = m_xml_file->LoadFile(file_path);
-        if(!rt) {
+        tinyxml2::XMLError rt = m_xml_file->LoadFile(file_path); // 成功返回 0
+        if(rt) {
             std::cout << "start Z_RPC server error! read config file [" << file_path
                       << "]  error info: [" << m_xml_file->ErrorStr()
                       << "]  error id: [" << m_xml_file->ErrorID()
                       << "]  error row and column: [" << m_xml_file->ErrorLineNum() << "]" << std::endl;
             exit(0);
         }
+        readConf();
     }
 
     Config::~Config() {
-
+        delete m_xml_file;
     }
 
     void Config::readConf() {
-        // log
+        // log 并创建 Logger
         tinyxml2::XMLElement* root = m_xml_file->RootElement();
         tinyxml2::XMLElement* log_node = root->FirstChildElement("log");
         if(!log_node) {
@@ -43,6 +45,10 @@ namespace zrpc {
             exit(0);
         }
         readLogConfig(log_node);
+
+        /* 获取配置中的配置后创建一个日志器，用来写入日志，包括 RPC_LOG 和 APP_LOG */
+        zRpcLogger = std::make_shared<Logger>();
+        zRpcLogger->init(m_log_prefix.c_str(), m_log_path.c_str(), m_log_max_file_size, m_log_sync_interval);
 
         // coroutine
         tinyxml2::XMLElement* coroutine_node = root->FirstChildElement("coroutine");
@@ -63,38 +69,56 @@ namespace zrpc {
         readTimeWheelConfig(time_wheel_node);
 
         // msg_req_len
-        tinyxml2::XMLElement* msg_req_len_node = root->FirstChildElement("msg_req_len");
-        if(!msg_req_len_node) {
-            std::cout << "start Z_PRC error! read config file " << m_file_path
-                      << ", cannot read [msg_req_len] xml node" << std::endl;
-            exit(0);
-        }
-        m_msg_req_len = std::atoi(msg_req_len_node->GetText());
-
         // max_connect_timeout
-        tinyxml2::XMLElement* max_connect_timeout_node = root->FirstChildElement("max_connect_timeout");
-        if(!max_connect_timeout_node) {
-            std::cout << "start Z_PRC error! read config file " << m_file_path
-                      << ", cannot read [max_connect_timeout] xml node" << std::endl;
-            exit(0);
-        }
-        m_max_connect_timeout = std::atoi(max_connect_timeout_node->GetText());
-
         // io_thread_num
-        tinyxml2::XMLElement* io_thread_num_node = root->FirstChildElement("io_thread_num");
-        if(!io_thread_num_node) {
-            std::cout << "start Z_PRC error! read config file " << m_file_path
-                      << ", cannot read [io_thread_num] xml node" << std::endl;
-            exit(0);
-        }
-        m_msg_req_len = std::atoi(io_thread_num_node->GetText());
+        readOtherConfig(root);
 
         // TODO server
+        tinyxml2::XMLElement* server_node = root->FirstChildElement("server");
+        if(!server_node) {
+            std::cout << "start Z_PRC error! read config file " << m_file_path
+                      << ", cannot read [server] xml node" << std::endl;
+            exit(0);
+        }
+        readServerConfig(server_node);
 
         // TODO database
+
     }
 
     void Config::readServerConfig(tinyxml2::XMLElement* server_node) {
+        // ip
+        tinyxml2::XMLElement* node = server_node->FirstChildElement("ip");
+        if(!node || !node->GetText()) {
+            std::cout << "start Z_PRC error! read config file " << m_file_path
+                      << ", cannot read [server.ip] xml node" << std::endl;
+            exit(0);
+        }
+        m_server_ip = std::string(node->GetText());
+        if(m_server_ip.empty()) {
+            m_server_ip = "0.0.0.0";
+        }
+
+        // port
+        node = server_node->FirstChildElement("port");
+        if(!node || !node->GetText()) {
+            std::cout << "start Z_PRC error! read config file " << m_file_path
+                      << ", cannot read [server.port] xml node" << std::endl;
+            exit(0);
+        }
+        m_server_ip = std::atoi(node->GetText());
+
+        // protocal
+        node = server_node->FirstChildElement("protocal");
+        if(!node || !node->GetText()) {
+            std::cout << "start Z_PRC error! read config file " << m_file_path
+                      << ", cannot read [server.protocal] xml node" << std::endl;
+            exit(0);
+        }
+        m_server_protocal = std::string(node->GetText());
+        std::transform(m_server_protocal.begin(), m_server_protocal.end(), m_server_protocal.begin(), ::toupper);
+
+        // TODO 根据protocal选择是HTTP协议还是TCP协议
 
     }
 
@@ -142,6 +166,35 @@ namespace zrpc {
         m_time_wheel_interval = std::atoi(node->GetText());
     }
 
+    void Config::readOtherConfig(tinyxml2::XMLElement* other_node) {
+        // msg_req_len
+        tinyxml2::XMLElement* msg_req_len_node = other_node->FirstChildElement("msg_req_len");
+        if(!msg_req_len_node || !msg_req_len_node->GetText()) {
+            std::cout << "start Z_PRC error! read config file " << m_file_path
+                      << ", cannot read [msg_req_len] xml node" << std::endl;
+            exit(0);
+        }
+        m_msg_req_len = std::atoi(msg_req_len_node->GetText());
+
+        // max_connect_timeout
+        tinyxml2::XMLElement* max_connect_timeout_node = other_node->FirstChildElement("max_connect_timeout");
+        if(!max_connect_timeout_node || !max_connect_timeout_node->GetText()) {
+            std::cout << "start Z_PRC error! read config file " << m_file_path
+                      << ", cannot read [max_connect_timeout] xml node" << std::endl;
+            exit(0);
+        }
+        m_max_connect_timeout = std::atoi(max_connect_timeout_node->GetText());
+
+        // io_thread_num
+        tinyxml2::XMLElement* io_thread_num_node = other_node->FirstChildElement("io_thread_num");
+        if(!io_thread_num_node || !io_thread_num_node->GetText()) {
+            std::cout << "start Z_PRC error! read config file " << m_file_path
+                      << ", cannot read [io_thread_num] xml node" << std::endl;
+            exit(0);
+        }
+        m_io_thread_num = std::atoi(io_thread_num_node->GetText());
+    }
+
     void Config::readLogConfig(tinyxml2::XMLElement* log_node) {
         // log_path
         tinyxml2::XMLElement* node = log_node->FirstChildElement("log_path");
@@ -168,8 +221,7 @@ namespace zrpc {
                       << ", cannot read [log_max_file_size] xml node" << std::endl;
             exit(0);
         }
-        m_log_max_file_size = std::atoi(node->GetText());
-        m_log_max_file_size = m_log_max_file_size * 1024 * 1024; // M
+        m_log_max_file_size = std::atoi(node->GetText()) * 1024 * 1024; // M
 
         // rpc_log_level
         node = log_node->FirstChildElement("rpc_log_level");
@@ -200,11 +252,11 @@ namespace zrpc {
         }
         m_log_sync_interval = std::atoi(node->GetText());
 
-        zRpcLogger = std::make_shared<Logger>();
-        zRpcLogger->init(m_log_prefix.c_str(), m_log_path.c_str(), m_log_max_file_size, m_log_sync_interval);
     }
 
     tinyxml2::XMLElement* Config::getXmlNode(const std::string& name) {
         return m_xml_file->RootElement()->FirstChildElement(name.c_str());
     }
+
+    std::shared_ptr<Config> zRpcConfig =  zrpc::Singleton_Conf::GetInstance(std::string("/home/zgys/workspace/Z_RPC/config/zrpc_server.xml").c_str());
 }

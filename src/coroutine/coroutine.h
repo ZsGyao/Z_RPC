@@ -14,13 +14,18 @@
 #include <memory>
 #include <functional>
 #include <ucontext.h>
+#include "src/common/config.h"
+#include "src/common/run_time.h"
 
 namespace zrpc {
+
+
+    void setCurrentRunTime(RunTime* v);
 
     /**
      * @brief 协程类
      */
-    class Coroutine : std::enable_shared_from_this<Coroutine> {
+    class Coroutine : public std::enable_shared_from_this<Coroutine> {
     public:
         typedef std::shared_ptr<Coroutine> ptr;
 
@@ -53,7 +58,15 @@ namespace zrpc {
          * @param[in] stack_size 协程栈大小
          * @param[in] cb 协程执行的回调函数
          */
-        Coroutine( std::function<void()> cb, size_t stack_size = 0);
+        explicit Coroutine( std::function<void()> cb, size_t stack_size = 1024 * 1024);
+
+        /**
+         * @brief 协程构造, 用于创建用户协程
+         * @param[in] stack_size 协程栈大小
+         * @param[in] run_time
+         * @param[in] cb 协程执行的回调函数
+         */
+        explicit Coroutine( std::function<void()> cb, RunTime* run_time, size_t stack_size = 1024 * 1024);
 
         /**
          * @brief 析构函数
@@ -95,6 +108,10 @@ namespace zrpc {
             return m_cor_state;
         }
 
+        RunTime* getRunTime() {
+            return m_cor_run_time;
+        }
+
         /**
          * @brief 判断当前协程是否是主协程
          * @return true  false
@@ -124,6 +141,8 @@ namespace zrpc {
          */
         static Coroutine* GetMainCoroutine();
 
+        static RunTime* getCurrentRunTime();
+
         /**
          * @brief 获取总协程数
          */
@@ -142,6 +161,12 @@ namespace zrpc {
         ucontext_t            m_cor_ctx;                             // 协程上下文
         void*                 m_cor_stack_ptr   = nullptr;           // 协程栈地址
         std::function<void()> m_cor_cb;                              // 协程调度函数
+
+        uint64_t              m_cor_pool_index      = -1;                // index in coroutine pool
+
+        RunTime*              m_cor_run_time;
+        std::string           m_cor_msg_no;
+
     };
 }
 

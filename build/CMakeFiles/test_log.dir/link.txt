@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++11 -O0 -ggdb -Wall -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated -Wno-deprecated-declarations CMakeFiles/test_log.dir/tests/test_log.cpp.o -o ../bin/test_log  -Wl,-rpath,/home/zgys/workspace/Z_RPC/lib ../lib/libsrc.so -ltinyxml2 
