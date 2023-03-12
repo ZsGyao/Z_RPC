@@ -28,15 +28,15 @@ option(BUILD_TEST "ON for complile test" ON)
 
 set(LIB_SRC
         src/common/config.cpp
-        src/common/config.h
         src/common/log.cpp
-        src/common/log.h
         src/common/noncopyable.hpp
         src/common/macro.hpp
-        src/coroutine/coroutine.cpp
-        src/coroutine/coroutine.h
-        src/network/mutex.hpp
         src/common/singleton.hpp
+        src/coroutine/coroutine.cpp
+        src/coroutine/hook.cpp
+        src/coroutine/coroutine_pool.cpp
+        src/network/mutex.hpp
+
         )
 
 add_library(src SHARED ${LIB_SRC})

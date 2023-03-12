@@ -19,6 +19,7 @@
 
 namespace zrpc {
 
+    extern std::shared_ptr<Config> zRpcConfig;
 
     void setCurrentRunTime(RunTime* v);
 
@@ -54,19 +55,29 @@ namespace zrpc {
 
     public:
         /**
+         * @brief 构造
+         * @param stack_size
+         * @param stack_ptr
+         * @attention 在使用协程池时，可以在内存池中分配内存，传入内存池的栈指针
+         */
+        explicit Coroutine(char* stack_ptr, size_t stack_size = zRpcConfig->m_cor_stack_size);
+
+        /**
          * @brief 协程构造, 用于创建用户协程
          * @param[in] stack_size 协程栈大小
          * @param[in] cb 协程执行的回调函数
+         * @attention 不使用协程池，协程栈直接从堆中分配
          */
-        explicit Coroutine( std::function<void()> cb, size_t stack_size = 1024 * 1024);
+        explicit Coroutine( std::function<void()> cb, size_t stack_size = zRpcConfig->m_cor_stack_size);
 
         /**
          * @brief 协程构造, 用于创建用户协程
          * @param[in] stack_size 协程栈大小
          * @param[in] run_time
          * @param[in] cb 协程执行的回调函数
+         * @attention 不使用协程池，协程栈直接从堆中分配
          */
-        explicit Coroutine( std::function<void()> cb, RunTime* run_time, size_t stack_size = 1024 * 1024);
+        explicit Coroutine( std::function<void()> cb, RunTime* run_time, size_t stack_size = zRpcConfig->m_cor_stack_size);
 
         /**
          * @brief 析构函数
@@ -108,8 +119,16 @@ namespace zrpc {
             return m_cor_state;
         }
 
-        RunTime* getRunTime() {
+        RunTime* getRunTime() const {
             return m_cor_run_time;
+        }
+
+        uint64_t getPoolIndex() const;
+
+        void setPoolIndex(uint64_t index);
+
+        void* getStackPtr() const {
+            return m_cor_stack_ptr;
         }
 
         /**
@@ -162,7 +181,9 @@ namespace zrpc {
         void*                 m_cor_stack_ptr   = nullptr;           // 协程栈地址
         std::function<void()> m_cor_cb;                              // 协程调度函数
 
-        uint64_t              m_cor_pool_index      = -1;                // index in coroutine pool
+        bool                  m_create_in_memory_pool;               // 栈内存是否从内存池中分配
+
+        uint64_t              m_cor_pool_index      = -1;            // index in coroutine pool
 
         RunTime*              m_cor_run_time;
         std::string           m_cor_msg_no;

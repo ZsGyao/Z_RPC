@@ -8,12 +8,12 @@
   ******************************************************************************
   */
 
-#include "coroutine.h"
+#include "src/coroutine/coroutine.h"
 #include <atomic>
 #include <iostream>
-#include "common/log.h"
-#include "common/macro.hpp"
-#include "common/config.h"
+#include "src/common/log.h"
+#include "src/common/macro.hpp"
+#include "src/common/config.h"
 
 namespace zrpc {
     /// 静态线程局部变量， 每个线程独立拥有一份， 保存当前线程主协程
@@ -43,7 +43,7 @@ namespace zrpc {
 
     using StackAllocator = MallocStackAllocator;
 
-    extern std::shared_ptr<Config> zRpcConfig;
+    // extern std::shared_ptr<Config> zRpcConfig;
 
     Coroutine::Coroutine() {
         t_current_coroutine = this;                         // 此时当前协程就是主协程
@@ -61,17 +61,40 @@ namespace zrpc {
         std::cout << "debug cor construct ____" << std::endl;
     }
 
+    Coroutine::Coroutine(char* stack_ptr, size_t stack_size)
+             : m_cor_id(s_current_coroutine_id++),
+               m_cor_stack_size(stack_size),
+               m_cor_stack_ptr((char*)stack_ptr) {
+        m_create_in_memory_pool = true;
+        s_coroutine_count++;
+
+        if(getcontext(&m_cor_ctx)) { // 将ucp初始化并保存当前的上下文。
+            ZRPC_ASSERT2(false, "getcontext");
+        }
+
+        m_cor_ctx.uc_link          = nullptr;          // uc_link指向一个上下文，当当前上下文结束时，将返回执行该上下文。
+        m_cor_ctx.uc_stack.ss_sp   = m_cor_stack_ptr;  // ss_sp栈空间的指针，指向当前栈所在的位置。
+        m_cor_ctx.uc_stack.ss_size = m_cor_stack_size; // 整个栈的大小
+        // 对上下文进行处理，可以创建一个新的上下文
+        makecontext(&m_cor_ctx, &Coroutine::MainFunc, 0);
+
+        //     std::cout << "debug reach cor construct2" << std::endl;
+        DebugLog << "coroutine [ id:" << m_cor_id << " ] create, stack in Memory Pool";
+    }
+
     Coroutine::Coroutine(std::function<void()> cb, size_t stack_size)
             : m_cor_id(s_current_coroutine_id++),
               m_cor_cb(std::move(cb)) {
     //    std::cout << "debug reach cor construct1" << std::endl;
+        m_create_in_memory_pool = false;
 
         s_coroutine_count++;
         // TODO 配置中的参数加入 test
         // std::cout << "debug reach cor construct______" << std::endl;
 
         //m_cor_stack_size = stack_size ? stack_size : zRpcConfig->m_cor_stack_size; // 是否选用配置
-        m_cor_stack_size = stack_size ? stack_size : zrpc::zRpcConfig->m_cor_stack_size;
+        // TODO 测试 配置中的参数是否生效 test？
+        m_cor_stack_size = stack_size;
         m_cor_stack_ptr  = StackAllocator::Alloc(m_cor_stack_size);
 
         if(getcontext(&m_cor_ctx)) { // 将ucp初始化并保存当前的上下文。
@@ -85,15 +108,16 @@ namespace zrpc {
         makecontext(&m_cor_ctx, &Coroutine::MainFunc, 0);
 
    //     std::cout << "debug reach cor construct2" << std::endl;
-        DebugLog << "coroutine [ id:" << m_cor_id << " ] create";
+        DebugLog << "coroutine [ id:" << m_cor_id << " ] create, stack in Heap";
     }
 
     Coroutine::Coroutine(std::function<void()> cb, RunTime* run_time, size_t stack_size)
             : m_cor_id(s_current_coroutine_id++),
               m_cor_cb(std::move(cb)),
               m_cor_run_time(run_time){
+        m_create_in_memory_pool = false;
         s_coroutine_count++;
-        m_cor_stack_size = stack_size ? stack_size : zrpc::zRpcConfig->m_cor_stack_size;
+        m_cor_stack_size = stack_size;
         m_cor_stack_ptr  = StackAllocator::Alloc(m_cor_stack_size);
 
         if(getcontext(&m_cor_ctx)) {
@@ -106,17 +130,23 @@ namespace zrpc {
 
         makecontext(&m_cor_ctx, &Coroutine::MainFunc, 0);
 
-        DebugLog << "coroutine [ id:" << m_cor_id << " ] create";
+        DebugLog << "coroutine [ id:" << m_cor_id << " ] create, stack in Heap";
     }
 
     /* 线程的主协程析构时需要特殊处理，因为主协程没有分配栈和cb */
     Coroutine::~Coroutine() {
         s_coroutine_count--;
         if(m_cor_stack_ptr) {
-            // 有栈，说明是子协程，需要确保子协程一定是结束状态
-            ZRPC_ASSERT(m_cor_state == TERM);
-            StackAllocator::Dealloc(m_cor_stack_ptr, m_cor_stack_size);
-   //         DebugLog << "dealloc stack, coroutine [ id:" << m_cor_id << " ]";
+            // 有栈，说明是子协程，需要确保子协程一定是结束状态, 如果在内存池创建，不需要free
+            if(!m_create_in_memory_pool) {
+                ZRPC_ASSERT(m_cor_state == TERM);
+                StackAllocator::Dealloc(m_cor_stack_ptr, m_cor_stack_size);
+                DebugLog << "dealloc Heap stack, coroutine [ id:" << m_cor_id << " ]";
+            } else {
+                ZRPC_ASSERT(m_cor_state == TERM);
+                // free任务交给内存池去做
+
+            }
         } else {
             // 没有栈，说明是线程的主协程
             ZRPC_ASSERT(!m_cor_cb);               // 主协程没有cb
@@ -147,6 +177,21 @@ namespace zrpc {
 
         makecontext(&m_cor_ctx, &Coroutine::MainFunc, 0);
         m_cor_state = READY;
+    }
+
+    uint64_t Coroutine::getPoolIndex() const {
+        if(m_create_in_memory_pool){
+            return m_cor_pool_index;
+        }
+        return -1;
+    }
+
+    void Coroutine::setPoolIndex(uint64_t index) {
+        if(m_create_in_memory_pool) {
+            m_cor_pool_index = index;
+        } else {
+            ZRPC_ASSERT2(false, "setPoolIndex, this coroutine is not create in Memory Pool");
+        }
     }
 
     bool Coroutine::isMainCoroutine() {
@@ -212,7 +257,7 @@ namespace zrpc {
             ZRPC_ASSERT2(false, "main coroutine have already init");
         }
 
-        Coroutine::ptr main_cor(new Coroutine());            // 初始化调用私有构造，创建主协程
+        Coroutine::ptr main_cor(new Coroutine());          // 初始化调用私有构造，创建主协程
         ZRPC_ASSERT(t_current_coroutine == main_cor.get());  // 在构造主协程时已经把t_current_coroutine设置为主协程
         t_main_coroutine = main_cor;                         // 设置 t_main_coroutine
     }

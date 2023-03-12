@@ -5,48 +5,40 @@
     <option name="openedFilesInfos">
       <list>
         <OpenedFileInfo>
-          <option name="caretOffset" value="3741" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/config.h" />
+          <option name="caretOffset" value="1191" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/coroutine_pool.h" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="3388" />
+          <option name="caretOffset" value="1186" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/memory_pool.cpp" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="883" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/memory_pool.h" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="3104" />
           <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/coroutine.h" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="3838" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/log.h" />
-        </OpenedFileInfo>
-        <OpenedFileInfo>
-          <option name="caretOffset" value="7128" />
+          <option name="caretOffset" value="8704" />
           <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/coroutine.cpp" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="352" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/tests/test_config.cpp" />
+          <option name="caretOffset" value="2914" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/coroutine_pool.cpp" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="866" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/tests/test_coroutine.cpp" />
+          <option name="caretOffset" value="557" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/thread_pool.h" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="3516" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/log.cpp" />
+          <option name="caretOffset" value="1757" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/thread.cpp" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="438" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/tests/test_log.cpp" />
-        </OpenedFileInfo>
-        <OpenedFileInfo>
-          <option name="caretOffset" value="565" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/config/zrpc_server.xml" />
-        </OpenedFileInfo>
-        <OpenedFileInfo>
-          <option name="caretOffset" value="2985" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/src/common/config.cpp" />
-        </OpenedFileInfo>
-        <OpenedFileInfo>
-          <option name="caretOffset" value="0" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/src/coroutine/hook.h" />
+          <option name="caretOffset" value="516" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/src/network/fd_event.h" />
         </OpenedFileInfo>
       </list>
     </option>
