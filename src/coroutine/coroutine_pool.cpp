@@ -16,7 +16,7 @@ namespace zrpc {
 
     extern std::shared_ptr<Config> zRpcConfig;
 
-    auto zRpcCoroutinePool = Singleton_CoroutinePool::GetInstance(zRpcConfig->m_cor_pool_size,
+    std::shared_ptr<zrpc::CoroutinePool> zRpcCoroutinePool = Singleton_CoroutinePool::GetInstance(zRpcConfig->m_cor_pool_size,
                                                                   zRpcConfig->m_cor_stack_size);
 
     CoroutinePool::CoroutinePool(int pool_size, int stack_size)
@@ -35,7 +35,7 @@ namespace zrpc {
             cor->setPoolIndex(i);
             m_free_cors.emplace_back(std::make_pair(cor,false));
         }
-        DebugLog << "CoroutinePool create : coroutine number [" << m_cor_pool_size <<"]  stack size [" << m_stack_size << "]";
+        DebugLog << "CoroutinePool create : coroutine number [" << m_cor_pool_size <<"]  stack size [" << m_stack_size / 1024 << " KB" << "]";
     }
 
     CoroutinePool::~CoroutinePool() {

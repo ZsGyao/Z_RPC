@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(Z_RPC)
+project(zRPC)
 
 set(CMAKE_C_STANDARD 11)
 
@@ -27,16 +27,23 @@ include_directories(src/network)
 option(BUILD_TEST "ON for complile test" ON)
 
 set(LIB_SRC
-        src/common/config.cpp
         src/common/log.cpp
+        src/common/macro.cpp
+        src/common/config.cpp
         src/common/noncopyable.hpp
-        src/common/macro.hpp
         src/common/singleton.hpp
+        src/common/start.cpp
+        src/common/thread_pool.cpp
         src/coroutine/coroutine.cpp
         src/coroutine/hook.cpp
         src/coroutine/coroutine_pool.cpp
+        src/coroutine/memory_pool.cpp
         src/network/mutex.hpp
-
+        src/network/byte.hpp
+        src/network/fd_event.cpp
+        src/network/timer.cpp
+        src/network/net_address.cpp
+        src/network/reactor.cpp
         )
 
 add_library(src SHARED ${LIB_SRC})
@@ -56,6 +63,11 @@ add_executable(test_log tests/test_log.cpp)
 add_dependencies(test_log src)
 force_redefine_file_macro_for_sources(test_log)  #__FILE__
 target_link_libraries(test_log ${LIBS})
+
+add_executable(test_macro tests/test_macro.cpp)
+add_dependencies(test_macro src)
+force_redefine_file_macro_for_sources(test_macro)  #__FILE__
+target_link_libraries(test_macro ${LIBS})
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)

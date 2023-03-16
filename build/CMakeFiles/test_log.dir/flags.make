@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/zgys/workspace/Z_RPC/. -I/home/zgys/workspace/Z_RPC/src -I/home/zgys/workspace/Z_RPC/src/coroutine -I/home/zgys/workspace/Z_RPC/src/common -I/home/zgys/workspace/Z_RPC/src/network
+CXX_INCLUDES = -I/home/zgys/workspace/zRPC/. -I/home/zgys/workspace/zRPC/src -I/home/zgys/workspace/zRPC/src/coroutine -I/home/zgys/workspace/zRPC/src/common -I/home/zgys/workspace/zRPC/src/network
 
 CXX_FLAGS =  -std=c++11 -O0 -ggdb -Wall -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated -Wno-deprecated-declarations
 

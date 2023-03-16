@@ -17,6 +17,7 @@
 #include "src/common/config.h"
 #include "src/common/run_time.h"
 
+
 namespace zrpc {
 
     extern std::shared_ptr<Config> zRpcConfig;
@@ -131,12 +132,6 @@ namespace zrpc {
             return m_cor_stack_ptr;
         }
 
-        /**
-         * @brief 判断当前协程是否是主协程
-         * @return true  false
-         */
-        bool isMainCoroutine();
-
     public:
         /**
          * @brief 协程入口函数
@@ -160,7 +155,7 @@ namespace zrpc {
          */
         static Coroutine* GetMainCoroutine();
 
-        static RunTime* getCurrentRunTime();
+        static RunTime* GetCurrentRunTime();
 
         /**
          * @brief 获取总协程数
@@ -171,7 +166,13 @@ namespace zrpc {
          * @brief 获取当前正在运行的协程id
          * @return
          */
-        static uint64_t getCurrentCoroutineId();
+        static uint64_t GetCurrentCoroutineId();
+
+        /**
+         * @brief 判断当前协程是否是主协程
+         * @return true  false
+         */
+        static bool IsMainCoroutine();
 
     private:
         uint64_t              m_cor_id          = 0;                 // 协程id

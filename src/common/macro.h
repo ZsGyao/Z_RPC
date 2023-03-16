@@ -9,14 +9,15 @@
   */
 
 
-#ifndef Z_RPC_MACRO_HPP
-#define Z_RPC_MACRO_HPP
+#ifndef Z_RPC_MACRO_H
+#define Z_RPC_MACRO_H
 
 #include <string>
 #include <assert.h>
 #include <execinfo.h>
 #include <cxxabi.h>
-#include "log.h"
+#include "src/common/log.h"
+
 
 #if defined __GNUC__ || defined __llvm__
 /// LIKCLY 宏的封装, 告诉编译器优化,条件大概率成立
@@ -49,29 +50,13 @@
     }
 
 namespace zrpc {
-/**
- * @brief 获取当前的调用栈
- * @param[out] bt 保存调用栈
- * @param[in] size 最多返回层数
- * @param[in] skip 跳过栈顶的层数
- */
-    void Backtrace(std::vector<std::string> &bt, int size = 64, int skip = 1) {
-        void **array = (void **) malloc((sizeof(void *) * size));
-        size_t s = ::backtrace(array, size);
-
-        char **strings = backtrace_symbols(array, s);
-        if (strings == NULL) {
-            ErrorLog << "backtrace_symbols error";
-            return;
-        }
-
-        for (size_t i = skip; i < s; ++i) {
-            bt.push_back(abi::__cxa_demangle(strings[i], nullptr, nullptr, nullptr));
-        }
-
-        free(strings);
-        free(array);
-    }
+    /**
+     * @brief 获取当前的调用栈
+     * @param[out] bt 保存调用栈
+     * @param[in] size 最多返回层数
+     * @param[in] skip 跳过栈顶的层数
+     */
+     void Backtrace(std::vector<std::string> &bt, int size = 64, int skip = 1);
 
 /**
  * @brief 获取当前栈信息的字符串
@@ -79,15 +64,7 @@ namespace zrpc {
  * @param[in] skip 跳过栈顶的层数
  * @param[in] prefix 栈信息前输出的内容
  */
-    std::string BacktraceToString(int size = 64, int skip = 2, const std::string &prefix = "") {
-        std::vector<std::string> bt;
-        Backtrace(bt, size, skip);
-        std::stringstream ss;
-        for (size_t i = 0; i < bt.size(); ++i) {
-            ss << prefix << bt[i] << std::endl;
-        }
-        return ss.str();
-    }
+    std::string BacktraceToString(int size = 64, int skip = 2, const std::string &prefix = "");
 }
 
-#endif //Z_RPC_MACRO_HPP
+#endif //Z_RPC_MACRO_H

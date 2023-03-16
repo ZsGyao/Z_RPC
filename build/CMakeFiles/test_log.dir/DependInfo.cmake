@@ -8,12 +8,12 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/zgys/workspace/Z_RPC/tests/test_log.cpp" "CMakeFiles/test_log.dir/tests/test_log.cpp.o" "gcc" "CMakeFiles/test_log.dir/tests/test_log.cpp.o.d"
+  "/home/zgys/workspace/zRPC/tests/test_log.cpp" "CMakeFiles/test_log.dir/tests/test_log.cpp.o" "gcc" "CMakeFiles/test_log.dir/tests/test_log.cpp.o.d"
   )
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/home/zgys/workspace/Z_RPC/build/CMakeFiles/src.dir/DependInfo.cmake"
+  "/home/zgys/workspace/zRPC/build/CMakeFiles/src.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

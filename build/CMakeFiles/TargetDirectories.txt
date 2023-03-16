@@ -1,0 +1,6 @@
+/home/zgys/workspace/zRPC/build/CMakeFiles/src.dir
+/home/zgys/workspace/zRPC/build/CMakeFiles/test_coroutine.dir
+/home/zgys/workspace/zRPC/build/CMakeFiles/test_log.dir
+/home/zgys/workspace/zRPC/build/CMakeFiles/test_macro.dir
+/home/zgys/workspace/zRPC/build/CMakeFiles/edit_cache.dir
+/home/zgys/workspace/zRPC/build/CMakeFiles/rebuild_cache.dir

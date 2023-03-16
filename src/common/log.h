@@ -165,7 +165,7 @@ namespace zrpc {
          * @param max_size 最大大小
          * @param type 日志类型
          */
-        AsyncLogger(const char* file_name, const char* file_path, int max_size, LogType type);
+        AsyncLogger(std::string file_name, std::string file_path, int max_size, LogType type);
 
         /**
          * @brief 析构函数
@@ -200,22 +200,22 @@ namespace zrpc {
         std::queue<std::vector<std::string>> m_tasks;
 
     private:
-        const char*    m_file_name;                // 写入文件名
-        const char*    m_file_path;                // 日志写入路径
-        int            m_max_size = 0;            // 写入单个文件最大大小
-        LogType        m_log_type;                // 日志类型
-        int            m_no{};                    // 写入文件的下标
-        bool           m_need_reopen = false;     // 是否需要重新打开文件
-        FILE*          m_file_handle = nullptr;   // 文件句柄
-        std::string    m_date;                    // 日期
+        std::string    m_file_name;                // 写入文件名
+        std::string    m_file_path;                // 日志写入路径
+        int            m_max_size = 0;             // 写入单个文件最大大小
+        LogType        m_log_type;                 // 日志类型
+        int            m_no = 0;                   // 写入文件的下标
+        bool           m_need_reopen = false;      // 是否需要重新打开文件
+        FILE*          m_file_handle = nullptr;    // 文件句柄
+        std::string    m_date;                     // 日期
 
-        MutexType      m_mutex;                   // 互斥量
-        pthread_cond_t m_condition{};             // 线程初始化条件
-        bool           m_stop = false;            // 异步写入是否停止
+        MutexType      m_mutex;                    // 互斥量
+        pthread_cond_t m_condition;                // 线程初始化条件
+        bool           m_stop = false;             // 异步写入是否停止
 
     public:
-        pthread_t m_thread{};
-        sem_t     m_semaphore{};
+        pthread_t m_thread;
+        sem_t     m_semaphore;
     };
 
     class Logger {
@@ -227,7 +227,7 @@ namespace zrpc {
 
         ~Logger();
 
-        void init(const char* file_name, const char* file_path, int max_size, int sync_interval);
+        void init(const std::string& file_name, const std::string& file_path, int max_size, int sync_interval);
 
         // void log();
         void pushRpcLog(const std::string& log_msg);
@@ -258,7 +258,7 @@ namespace zrpc {
 
     public:
         std::vector<std::string> m_rpc_buffer;     // 保存RPC日志
-        std::vector<std::string> m_app_buffer;     // 保存用户日志
+        std::vector<std::string> m_app_buffer;     // 保存APP日志
 
     private:
         MutexType        m_app_buff_mutex;
@@ -270,7 +270,8 @@ namespace zrpc {
         int              m_sync_interval = 0;
     };
 
-    extern zrpc::Logger::ptr zRpcLogger;
+
+    void Exit(int code);
 }
 
 

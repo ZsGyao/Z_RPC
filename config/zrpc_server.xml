@@ -3,7 +3,7 @@
     <!--log config-->
     <log>
         <!--identify path of log file-->
-        <log_path>/home/zgys/workspace/Z_RPC/log</log_path>
+        <log_path>/home/zgys/workspace/zRPC/log</log_path>
         <log_prefix>zrpc_server</log_prefix>
 
         <!--identify max size of single log file, MB-->
@@ -22,7 +22,7 @@
         <coroutine_stack_size>256</coroutine_stack_size>
 
         <!--default the number of coroutine in coroutine pool -->
-        <coroutine_pool_size>1000</coroutine_pool_size>
+        <coroutine_pool_size>5</coroutine_pool_size>
 
     </coroutine>
 

@@ -9,7 +9,9 @@
   */
 
 #include "src/coroutine/memory_pool.h"
-#include "src/common/macro.hpp"
+#include "src/common/macro.h"
+#include "src/common/log.h"
+
 
 namespace zrpc {
 
@@ -19,7 +21,7 @@ namespace zrpc {
         m_mem_size = m_mem_block_size * m_mem_block_count;
         m_mem_start = (char*) malloc(m_mem_size);
         ZRPC_ASSERT(m_mem_start != (void*)-1);
-        DebugLog << "MemoryPoll create success mmap [" << m_mem_size << " bytes] memory";
+        DebugLog << "MemoryPoll create success mmap [" << m_mem_size / 1024 << " KB] memory";
 
         m_mem_end = m_mem_start + m_mem_size;
         m_mem_blocks.resize(m_mem_block_count);

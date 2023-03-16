@@ -16,9 +16,11 @@
 namespace zrpc {
 
     zrpc::Logger::ptr zRpcLogger;
-    // extern zrpc::TcpServer::ptr gRpcServer;
+    // extern zrpc::TcpServer::ptr zRpcServer;
 
     Config::Config(const char* file_path) : m_file_path(file_path) {
+       // std::cout << "**** Debug [config.cpp " << __LINE__ << "] Config construct ****" << std::endl;
+
         m_xml_file = new tinyxml2::XMLDocument();
         tinyxml2::XMLError rt = m_xml_file->LoadFile(file_path); // 成功返回 0
         if(rt) {
@@ -32,10 +34,13 @@ namespace zrpc {
     }
 
     Config::~Config() {
+      //  std::cout << "**** Debug [config.cpp " << __LINE__ << "] ~Config destroy ****" << std::endl;
         delete m_xml_file;
     }
 
     void Config::readConf() {
+      //  std::cout << "**** Debug [config.cpp "<< __LINE__ <<"] readConf ****" << std::endl;
+
         // log 并创建 Logger
         tinyxml2::XMLElement* root = m_xml_file->RootElement();
         tinyxml2::XMLElement* log_node = root->FirstChildElement("log");
@@ -48,7 +53,7 @@ namespace zrpc {
 
         /* 获取配置中的配置后创建一个日志器，用来写入日志，包括 RPC_LOG 和 APP_LOG */
         zRpcLogger = std::make_shared<Logger>();
-        zRpcLogger->init(m_log_prefix.c_str(), m_log_path.c_str(), m_log_max_file_size, m_log_sync_interval);
+        zRpcLogger->init(m_log_prefix, m_log_path, m_log_max_file_size, m_log_sync_interval);
 
         // coroutine
         tinyxml2::XMLElement* coroutine_node = root->FirstChildElement("coroutine");
@@ -87,6 +92,8 @@ namespace zrpc {
     }
 
     void Config::readServerConfig(tinyxml2::XMLElement* server_node) {
+      //  std::cout << "**** Debug [config.cpp " << __LINE__ << "] readServerConfig ****" << std::endl;
+
         // ip
         tinyxml2::XMLElement* node = server_node->FirstChildElement("ip");
         if(!node || !node->GetText()) {
@@ -123,6 +130,8 @@ namespace zrpc {
     }
 
     void Config::readCoroutineConfig(tinyxml2::XMLElement* coroutine_node) {
+      //  std::cout << "**** Debug [config.cpp "<< __LINE__ <<"] readCoroutineConfig ****" << std::endl;
+
         // coroutine_stack_size
         tinyxml2::XMLElement* node = coroutine_node->FirstChildElement("coroutine_stack_size");
         if(!node || !node->GetText()) {
@@ -147,6 +156,8 @@ namespace zrpc {
     }
 
     void Config::readTimeWheelConfig(tinyxml2::XMLElement* time_wheel_node) {
+      //  std::cout << "**** Debug [config.cpp "<< __LINE__ <<"] readTimeWheelConfig ****" << std::endl;
+
         // bucket_num
         tinyxml2::XMLElement* node = time_wheel_node->FirstChildElement("bucket_num");
         if(!node || !node->GetText()) {
@@ -167,6 +178,8 @@ namespace zrpc {
     }
 
     void Config::readOtherConfig(tinyxml2::XMLElement* other_node) {
+     //   std::cout << "**** Debug [config.cpp "<< __LINE__ <<"] readOtherConfig ****" << std::endl;
+
         // msg_req_len
         tinyxml2::XMLElement* msg_req_len_node = other_node->FirstChildElement("msg_req_len");
         if(!msg_req_len_node || !msg_req_len_node->GetText()) {
@@ -196,6 +209,7 @@ namespace zrpc {
     }
 
     void Config::readLogConfig(tinyxml2::XMLElement* log_node) {
+     //   std::cout << "**** Debug [config.cpp " << __LINE__ << "] readLogConfig ****" << std::endl;
         // log_path
         tinyxml2::XMLElement* node = log_node->FirstChildElement("log_path");
         if(!node || !node->GetText()) {
@@ -258,5 +272,5 @@ namespace zrpc {
         return m_xml_file->RootElement()->FirstChildElement(name.c_str());
     }
 
-    std::shared_ptr<Config> zRpcConfig =  zrpc::Singleton_Conf::GetInstance(std::string("/home/zgys/workspace/Z_RPC/config/zrpc_server.xml").c_str());
+    std::shared_ptr<Config> zRpcConfig =  zrpc::Singleton_Conf::GetInstance("/home/zgys/workspace/zRPC/config/zrpc_server.xml");
 }

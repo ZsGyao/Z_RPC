@@ -40,7 +40,7 @@ namespace zrpc {
 
     unsigned int sleep_hook(unsigned int seconds);
 
-    void SetHook(bool);
+    void SetHook(bool value);
 
 
     extern "C" {
