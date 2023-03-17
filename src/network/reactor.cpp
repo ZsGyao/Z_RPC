@@ -210,7 +210,7 @@ namespace zrpc {
                             }
                         }
                     } else { // 是监听事件
-                        zrpc::FdEvent *ptr = (zrpc::FdEvent*) event.data.ptr;
+                        auto ptr = (zrpc::FdEvent*) event.data.ptr;
                         if (ptr != nullptr) {
                             int fd = ptr->getFd();
                             if (!(event.events & EPOLLIN) && (!((event.events & EPOLLOUT)))) {

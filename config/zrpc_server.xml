@@ -31,7 +31,7 @@
     <!--max time when call connect, s-->
     <max_connect_timeout>75</max_connect_timeout>
 
-    <!--count of io threads, at least 1-->
+    <!--count of io threads in IOThreadPool, at least 1-->
     <io_thread_num>4</io_thread_num>
 
     <time_wheel>

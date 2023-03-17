@@ -44,7 +44,7 @@ set(LIB_SRC
         src/network/timer.cpp
         src/network/net_address.cpp
         src/network/reactor.cpp
-        )
+        src/network/abstract_data.h src/network/tcp/abstract_slot.h src/network/tcp/tcp_connect_time_wheel.h src/network/tcp/tcp_connect_timer_wheel.cpp src/network/tcp/tcp_buffer.h src/network/tcp/tcp_buffer.cpp src/network/tcp/io_thread.h src/network/tcp/io_thread.cpp)
 
 add_library(src SHARED ${LIB_SRC})
 force_redefine_file_macro_for_sources(src)

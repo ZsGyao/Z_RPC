@@ -51,6 +51,7 @@ namespace zrpc {
 
         void addCoroutine(zrpc::Coroutine::ptr cor, bool is_wakeup = true);
 
+        /* use eventfd() that write into m_wake_fd, and epoll_wait in reactor will back and execute the task */
         void wakeup() const;
 
         void loop();

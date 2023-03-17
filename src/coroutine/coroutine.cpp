@@ -256,7 +256,7 @@ namespace zrpc {
 
     void Coroutine::InitMainCoroutine() {
         if(t_main_coroutine) {
-            WarnLog << "main coroutine have already init" << std::endl;
+            WarnLog << "main coroutine have already init";
             // WarnLog << "main coroutine have already init";
             // ZRPC_ASSERT2(false, "main coroutine have already init");
             return;
@@ -290,6 +290,10 @@ namespace zrpc {
     }
 
     uint64_t Coroutine::GetCurrentCoroutineId() {
-        return t_current_coroutine->getCorId();
+        if(t_current_coroutine) {
+            return t_current_coroutine->getCorId();
+        }
+        ErrorLog << "t_main_coroutine not init, try to call InitMainCoroutine()";
+        return -1;
     }
 }
