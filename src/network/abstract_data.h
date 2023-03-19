@@ -9,7 +9,7 @@ namespace zrpc {
     class AbstractData {
     public:
         AbstractData() = default;
-        virtual ~AbstractData() {};
+        virtual ~AbstractData() = default;
 
         bool decode_success = false;
         bool encode_success = false;

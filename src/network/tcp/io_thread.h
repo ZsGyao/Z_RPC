@@ -87,6 +87,7 @@ namespace zrpc {
 
         Coroutine::ptr addCoroutineToThreadByIndex(int index, std::function<void()> cb, bool self = false);
 
+        /* put the task to coroutine and register cor to reactor */
         void addCoroutineToEachThread(std::function<void()> cb);
 
     private:

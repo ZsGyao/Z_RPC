@@ -17,6 +17,7 @@
 namespace zrpc {
 
     class TcpBuffer {
+    public:
         typedef std::shared_ptr<TcpBuffer> ptr;
 
         explicit TcpBuffer(int size);

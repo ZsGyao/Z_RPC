@@ -187,7 +187,7 @@ namespace zrpc {
     }
 
     void IOThreadPool::addCoroutineToEachThread(std::function<void()> cb) {
-        for (auto i : m_io_threads) {
+        for (const auto& i : m_io_threads) {
             Coroutine::ptr cor =  zRpcCoroutinePool->getCoroutineInstance();
             cor->resetCallBack(cb);
             i->getReactor()->addCoroutine(cor, true);

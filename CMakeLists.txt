@@ -34,6 +34,7 @@ set(LIB_SRC
         src/common/singleton.hpp
         src/common/start.cpp
         src/common/thread_pool.cpp
+        src/common/string_util.cpp
         src/coroutine/coroutine.cpp
         src/coroutine/hook.cpp
         src/coroutine/coroutine_pool.cpp
@@ -44,7 +45,13 @@ set(LIB_SRC
         src/network/timer.cpp
         src/network/net_address.cpp
         src/network/reactor.cpp
-        src/network/abstract_data.h src/network/tcp/abstract_slot.h src/network/tcp/tcp_connect_time_wheel.h src/network/tcp/tcp_connect_timer_wheel.cpp src/network/tcp/tcp_buffer.h src/network/tcp/tcp_buffer.cpp src/network/tcp/io_thread.h src/network/tcp/io_thread.cpp)
+        src/network/tcp/tcp_connect_timer_wheel.cpp
+        src/network/tcp/tcp_buffer.cpp
+        src/network/tcp/io_thread.cpp
+        src/network/http/http_define.cpp
+        src/network/http/http_codec.cpp
+        src/network/http/http_servlet.h src/network/http/http_servlet.cpp src/network/http/http_dispatcher.h src/network/abstract_dispatcher.h src/network/tcp/tcp_connection.h src/network/zRpcPb/zrpc_pb_codec.h src/network/zRpcPb/zrpc_pb_data.h)
+
 
 add_library(src SHARED ${LIB_SRC})
 force_redefine_file_macro_for_sources(src)
