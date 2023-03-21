@@ -25,6 +25,7 @@ namespace zrpc {
     class TcpConnection;
 
     class TcpTimeWheel {
+    public:
         typedef std::shared_ptr<TcpTimeWheel> ptr;
         typedef AbstractSlot<TcpConnection> TcpConnectionSlot;
 

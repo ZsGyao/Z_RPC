@@ -14,17 +14,18 @@
 
 #include "src/common/config.h"
 #include "src/network/timer.h"
+#include "src/network/tcp/tcp_server.h"
 
 namespace zrpc {
     /**
      * @brief 初始化配置
      * @param file 配置文件路径
      */
-    void InitConfig(const char* file);
+//    void InitConfig(const char* file);
 
     void StartRpcServer();
 
- //   TcpServer::ptr GetServer();
+    TcpServer::ptr GetServer();
 
     int GetIOThreadPoolSize();
 

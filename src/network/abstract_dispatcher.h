@@ -13,6 +13,7 @@
 
 #include <memory>
 #include "src/network/abstract_data.h"
+#include "src/network/tcp/tcp_connection.h"
 
 namespace zrpc {
     class AbstractDispatcher {
@@ -24,7 +25,6 @@ namespace zrpc {
         virtual ~AbstractDispatcher() {}
 
         virtual void dispatch(AbstractData* data, TcpConnection* conn) = 0;
-
     };
 }
 

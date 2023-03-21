@@ -17,6 +17,8 @@
 #include "src/network/reactor.h"
 #include "src/network/tcp/tcp_buffer.h"
 #include "src/network/abstract_codec.h"
+#include "src/network/zRpcPb/zrpc_pb_data.h"
+#include "src/coroutine/coroutine.h"
 
 namespace zrpc {
 
@@ -30,7 +32,7 @@ namespace zrpc {
         Closed       = 4,        // can't do io
     };
 
-    class TcpConnection : public std::shared_ptr<TcpConnection> {
+    class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     public:
         typedef std::shared_ptr<TcpConnection> ptr;
 
@@ -64,7 +66,7 @@ namespace zrpc {
 
         AbstractCodeC::ptr getCodec() const;
 
-        bool getResPackageData(const std::string& msg_req, zRpcPbStruct::pb_ptr& pb_struct);
+        bool getResPackageData(const std::string& msg_req, ZRpcPbStruct::pb_ptr& pb_struct);
 
         void registerToTimeWheel();
 
@@ -89,35 +91,29 @@ namespace zrpc {
         void clearClient();
 
     private:
-        TcpServer* m_tcp_svr {nullptr};
-        TcpClient* m_tcp_cli {nullptr};
-        IOThread* m_io_thread {nullptr};
-        Reactor* m_reactor {nullptr};
+        TcpServer* m_tcp_svr   = nullptr;
+        TcpClient* m_tcp_cli   = nullptr;
+        IOThread*  m_io_thread = nullptr;
+        Reactor*   m_reactor   = nullptr;
 
-        int m_fd {-1};
-        TcpConnectionState m_state {TcpConnectionState::Connected};
-        ConnectionType m_connection_type {ServerConnection};
+        int m_fd = -1;
+        TcpConnectionState m_state = TcpConnectionState::Connected;
+        ConnectionType     m_connection_type = ServerConnection;
 
         NetAddress::ptr m_peer_addr;
-
-
         TcpBuffer::ptr m_read_buffer;
         TcpBuffer::ptr m_write_buffer;
-
         Coroutine::ptr m_loop_cor;
 
         AbstractCodeC::ptr m_codec;
 
         FdEvent::ptr m_fd_event;
 
-        bool m_stop {false};
+        bool m_stop = false;
+        bool m_is_over_time = false;
 
-        bool m_is_over_time {false};
-
-        std::map<std::string, std::shared_ptr<TinyPbStruct>> m_reply_datas;
-
+        std::map<std::string, std::shared_ptr<ZRpcPbStruct>> m_reply_datas;
         std::weak_ptr<AbstractSlot<TcpConnection>> m_weak_slot;
-
         RWMutex m_mutex;
     };
 }

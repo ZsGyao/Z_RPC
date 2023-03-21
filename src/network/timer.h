@@ -55,6 +55,10 @@ namespace zrpc {
             m_is_repeated = false;
         }
 
+        int64_t getArriveTime() const {
+            return m_arrive_time;
+        }
+
     private:
         int64_t m_arrive_time;        // when to execute task, ms
         int64_t m_interval;           // interval between two tasks, ms
@@ -71,7 +75,7 @@ namespace zrpc {
          * @brief Timer construct
          * @param reactor register the timer to reactor
          */
-        Timer(Reactor* reactor);
+        explicit Timer(Reactor* reactor);
 
         ~Timer();
 

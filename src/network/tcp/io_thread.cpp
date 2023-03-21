@@ -11,6 +11,7 @@
 #include "src/network/tcp/io_thread.h"
 #include "src/common/macro.h"
 #include "src/coroutine/coroutine_pool.h"
+#include "src/network/tcp/tcp_connection.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <random>
@@ -59,7 +60,6 @@ namespace zrpc {
     void IOThread::addClient(TcpConnection* tcp_conn) {
         tcp_conn->registerToTimeWheel();
         tcp_conn->setUpServer();
-        return;
     }
 
     pthread_t IOThread::getPthreadId() const {

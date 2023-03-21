@@ -18,6 +18,10 @@ CXX_FLAGS =  -std=c++11 -O0 -ggdb -Wall -Werror -Wno-unused-function -Wno-builti
 
 # Custom defines: CMakeFiles/src.dir/src/common/thread_pool.cpp.o_DEFINES = __FILE__="src/common/thread_pool.cpp"
 
+# Custom defines: CMakeFiles/src.dir/src/common/string_util.cpp.o_DEFINES = __FILE__="src/common/string_util.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/common/msg_req.cpp.o_DEFINES = __FILE__="src/common/msg_req.cpp"
+
 # Custom defines: CMakeFiles/src.dir/src/coroutine/coroutine.cpp.o_DEFINES = __FILE__="src/coroutine/coroutine.cpp"
 
 # Custom defines: CMakeFiles/src.dir/src/coroutine/hook.cpp.o_DEFINES = __FILE__="src/coroutine/hook.cpp"
@@ -33,4 +37,34 @@ CXX_FLAGS =  -std=c++11 -O0 -ggdb -Wall -Werror -Wno-unused-function -Wno-builti
 # Custom defines: CMakeFiles/src.dir/src/network/net_address.cpp.o_DEFINES = __FILE__="src/network/net_address.cpp"
 
 # Custom defines: CMakeFiles/src.dir/src/network/reactor.cpp.o_DEFINES = __FILE__="src/network/reactor.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/tcp/tcp_connect_timer_wheel.cpp.o_DEFINES = __FILE__="src/network/tcp/tcp_connect_timer_wheel.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/tcp/tcp_buffer.cpp.o_DEFINES = __FILE__="src/network/tcp/tcp_buffer.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/tcp/io_thread.cpp.o_DEFINES = __FILE__="src/network/tcp/io_thread.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/tcp/tcp_connection.cpp.o_DEFINES = __FILE__="src/network/tcp/tcp_connection.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/tcp/tcp_server.cpp.o_DEFINES = __FILE__="src/network/tcp/tcp_server.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/tcp/tcp_client.cpp.o_DEFINES = __FILE__="src/network/tcp/tcp_client.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/http/http_define.cpp.o_DEFINES = __FILE__="src/network/http/http_define.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/http/http_codec.cpp.o_DEFINES = __FILE__="src/network/http/http_codec.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/http/http_servlet.cpp.o_DEFINES = __FILE__="src/network/http/http_servlet.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/http/http_dispatcher.cpp.o_DEFINES = __FILE__="src/network/http/http_dispatcher.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/zRpcPb/zrpc_pb_codec.cpp.o_DEFINES = __FILE__="src/network/zRpcPb/zrpc_pb_codec.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/zRpcPb/zrpc_pb_rpc_channel.cpp.o_DEFINES = __FILE__="src/network/zRpcPb/zrpc_pb_rpc_channel.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/zRpcPb/zrpc_pb_rpc_controller.cpp.o_DEFINES = __FILE__="src/network/zRpcPb/zrpc_pb_rpc_controller.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/zRpcPb/zrpc_pb_rpc_dispatcher.cpp.o_DEFINES = __FILE__="src/network/zRpcPb/zrpc_pb_rpc_dispatcher.cpp"
+
+# Custom defines: CMakeFiles/src.dir/src/network/zRpcPb/zrpc_pb_rpc_async_channel.cpp.o_DEFINES = __FILE__="src/network/zRpcPb/zrpc_pb_rpc_async_channel.cpp"
 

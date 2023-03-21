@@ -30,9 +30,9 @@ typedef int (*sleep_fun_ptr_t)(unsigned int seconds);
 
 namespace zrpc {
 
-    int accept_hook(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+    int accept_hook(int sockfd, struct sockaddr *addr, socklen_t* addrlen);
 
-    ssize_t read_hook(int fd, const void *buf, size_t count);
+    ssize_t read_hook(int fd, void *buf, size_t count);
 
     ssize_t write_hook(int fd, const void *buf, size_t count);
 

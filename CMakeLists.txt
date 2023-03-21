@@ -24,6 +24,9 @@ include_directories(src/coroutine)
 include_directories(src/common)
 include_directories(src/network)
 
+include_directories(/usr/local/include)
+link_directories(/usr/local/lib)
+
 option(BUILD_TEST "ON for complile test" ON)
 
 set(LIB_SRC
@@ -35,6 +38,7 @@ set(LIB_SRC
         src/common/start.cpp
         src/common/thread_pool.cpp
         src/common/string_util.cpp
+        src/common/msg_req.cpp
         src/coroutine/coroutine.cpp
         src/coroutine/hook.cpp
         src/coroutine/coroutine_pool.cpp
@@ -48,9 +52,20 @@ set(LIB_SRC
         src/network/tcp/tcp_connect_timer_wheel.cpp
         src/network/tcp/tcp_buffer.cpp
         src/network/tcp/io_thread.cpp
+        src/network/tcp/tcp_connection.cpp
+        src/network/tcp/tcp_server.cpp
+        src/network/tcp/tcp_client.cpp
         src/network/http/http_define.cpp
         src/network/http/http_codec.cpp
-        src/network/http/http_servlet.h src/network/http/http_servlet.cpp src/network/http/http_dispatcher.h src/network/abstract_dispatcher.h src/network/tcp/tcp_connection.h src/network/zRpcPb/zrpc_pb_codec.h src/network/zRpcPb/zrpc_pb_data.h)
+        src/network/http/http_servlet.cpp
+        src/network/http/http_dispatcher.cpp
+        src/network/zRpcPb/zrpc_pb_codec.cpp
+        src/network/zRpcPb/zrpc_pb_rpc_channel.cpp
+        src/network/zRpcPb/zrpc_pb_rpc_controller.cpp
+        src/network/zRpcPb/zrpc_pb_rpc_dispatcher.cpp
+        src/network/zRpcPb/zrpc_pb_rpc_async_channel.cpp
+
+        )
 
 
 add_library(src SHARED ${LIB_SRC})
@@ -59,6 +74,7 @@ force_redefine_file_macro_for_sources(src)
 set(LIBS
         src
         tinyxml2
+        protobuf
         )
 
 add_executable(test_coroutine tests/test_coroutine.cpp)

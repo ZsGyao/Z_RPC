@@ -187,7 +187,7 @@ namespace zrpc {
         return re;
     }
 
-    FdEventContainer*  FdEventContainer::GetFdContainer() {
+    FdEventContainer* FdEventContainer::GetFdContainer() {
         return zFdContainer.get();
     }
 }

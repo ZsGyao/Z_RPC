@@ -23,9 +23,11 @@ namespace zrpc {
 
     class NetAddress {
     public:
-
         typedef std::shared_ptr<NetAddress> ptr;
 
+        NetAddress() = default;
+
+        virtual ~NetAddress() = default;
         virtual sockaddr* getSockAddr() = 0;
         virtual int getFamily() const = 0;
         virtual std::string toString() const = 0;
@@ -37,19 +39,19 @@ namespace zrpc {
     public:
         IPAddress(const std::string& ip, uint16_t port);
 
-        IPAddress(const std::string& addr);
+        explicit IPAddress(const std::string& addr);
 
-        IPAddress(uint16_t port);
+        explicit IPAddress(uint16_t port);
 
-        IPAddress(sockaddr_in addr);
+        explicit IPAddress(sockaddr_in addr);
 
-        sockaddr* getSockAddr();
+        sockaddr* getSockAddr() override;
 
-        int getFamily() const;
+        int getFamily() const override;
 
-        socklen_t getSockLen() const;
+        socklen_t getSockLen() const override;
 
-        std::string toString() const;
+        std::string toString() const override;
 
         std::string getIP() const {
             return m_ip;
@@ -72,21 +74,21 @@ namespace zrpc {
 
     class UnixDomainAddress : public NetAddress {
     public:
-        UnixDomainAddress(std::string& path);
+        explicit UnixDomainAddress(std::string& path);
 
-        UnixDomainAddress(sockaddr_un addr);
+        explicit UnixDomainAddress(sockaddr_un addr);
 
-        sockaddr* getSockAddr();
+        sockaddr* getSockAddr() override;
 
-        int getFamily() const;
+        int getFamily() const override;
 
-        socklen_t getSockLen() const;
+        socklen_t getSockLen() const override;
 
         std::string getPath() const {
             return m_path;
         }
 
-        std::string toString() const;
+        std::string toString() const override;
 
 
     private:

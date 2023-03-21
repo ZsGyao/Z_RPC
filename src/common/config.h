@@ -111,7 +111,7 @@ namespace zrpc {
 
         // other
         int m_msg_req_len           = 0;    // 请求信息长度
-        int m_max_connect_timeout   = 0;    // ms
+        int m_max_connect_timeout   = 0;    // 最大链接超时 ms
         int m_io_thread_num         = 0;    // io线程数
 
         // time wheel

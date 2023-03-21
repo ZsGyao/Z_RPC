@@ -15,6 +15,8 @@
 #include <string>
 #include "src/network/abstract_data.h"
 #include "src/network/http/http_servlet.h"
+#include "src/network/abstract_dispatcher.h"
+#include "src/network/tcp/tcp_connection.h"
 
 namespace zrpc {
     class HttpDispatcher : public AbstractDispatcher {

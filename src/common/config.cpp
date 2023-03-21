@@ -10,13 +10,15 @@
 
 #include "src/common/config.h"
 #include "src/common/log.h"
+#include "src/network/tcp/tcp_server.h"
+#include "src/network/net_address.h"
 #include <iostream>
 #include <algorithm>
 
 namespace zrpc {
 
     zrpc::Logger::ptr zRpcLogger;
-    // extern zrpc::TcpServer::ptr zRpcServer;
+    zrpc::TcpServer::ptr zRpcServer;
 
     Config::Config(const char* file_path) : m_file_path(file_path) {
        // std::cout << "**** Debug [config.cpp " << __LINE__ << "] Config construct ****" << std::endl;
@@ -126,7 +128,25 @@ namespace zrpc {
         std::transform(m_server_protocal.begin(), m_server_protocal.end(), m_server_protocal.begin(), ::toupper);
 
         // TODO 根据protocal选择是HTTP协议还是TCP协议
+        zrpc::IPAddress::ptr addr = std::make_shared<zrpc::IPAddress>(m_server_ip, m_server_port);
+        if (m_server_protocal == "HTTP") {
+            zRpcServer = std::make_shared<TcpServer>(addr, Http_Protocal);
+        } else if (m_server_protocal == "zRpcPb") {
+            zRpcServer = std::make_shared<TcpServer>(addr, zRpcPb_Protocal);
+        } else {
+            ErrorLog << "Unkonw protocal, check [server.protocal] xml node!";
+        }
+        char buff[512];
+        sprintf(buff, "read config from file [%s]: [log_path: %s], [log_prefix: %s], [log_max_size: %d MB], [log_level: %s], "
+                      "[coroutine_stack_size: %d KB], [coroutine_pool_size: %d], "
+                      "[msg_req_len: %d], [max_connect_timeout: %d s], "
+                      "[iothread_num:%d], [timewheel_bucket_num: %d], [timewheel_inteval: %d s], [server_ip: %s], [server_Port: %d], [server_protocal: %s]\n",
+                m_file_path.c_str(), m_log_path.c_str(), m_log_prefix.c_str(), m_log_max_file_size / 1024 / 1024,
+                levelToString(m_rpc_log_level).c_str(), m_cor_stack_size, m_cor_pool_size, m_msg_req_len,
+                m_max_connect_timeout, m_io_thread_num, m_time_wheel_bucket_num, m_time_wheel_interval, m_server_ip.c_str(), m_server_port, m_server_protocal.c_str());
 
+        std::string s(buff);
+        InfoLog << s;
     }
 
     void Config::readCoroutineConfig(tinyxml2::XMLElement* coroutine_node) {

@@ -18,9 +18,9 @@
 namespace zrpc {
     class ZRpcPbCodeC : public AbstractCodeC {
     public:
-        ZRpcPbCodeC();
+        ZRpcPbCodeC() = default;
 
-        ~ZRpcPbCodeC();
+        ~ZRpcPbCodeC() = default;
 
         void encode(TcpBuffer* buf, AbstractData* data) override;
 
@@ -28,6 +28,7 @@ namespace zrpc {
 
         ProtocalType getProtocalType() override;
 
+    private:
         const char* encodePbData(ZRpcPbStruct* data, int& len);
     };
 }

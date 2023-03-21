@@ -56,7 +56,6 @@ namespace zrpc {
 
       //  std::cout << "**** Debug [coroutine.cpp " << __LINE__ <<"] Main Coroutine construct [cor_id:"<< m_cor_id << "] ****" << std::endl;
         DebugLog << "Main coroutine [ id:" << m_cor_id << " ] create";
-
     }
 
     Coroutine::Coroutine(char* stack_ptr, size_t stack_size)
@@ -64,6 +63,7 @@ namespace zrpc {
                m_cor_stack_size(stack_size),
                m_cor_stack_ptr((char*)stack_ptr) {
         m_create_in_memory_pool = true;
+        m_cor_need_resume = false;
         s_coroutine_count++;
 
         if(getcontext(&m_cor_ctx)) { // 将ucp初始化并保存当前的上下文。
@@ -85,6 +85,7 @@ namespace zrpc {
               m_cor_cb(std::move(cb)) {
     //    std::cout << "debug reach cor construct1" << std::endl;
         m_create_in_memory_pool = false;
+        m_cor_need_resume = true;
 
         s_coroutine_count++;
         // TODO 配置中的参数加入 test
@@ -114,6 +115,7 @@ namespace zrpc {
               m_cor_cb(std::move(cb)),
               m_cor_run_time(run_time){
         m_create_in_memory_pool = false;
+        m_cor_need_resume = true;
         s_coroutine_count++;
         m_cor_stack_size = stack_size;
         m_cor_stack_ptr  = StackAllocator::Alloc(m_cor_stack_size);
@@ -143,7 +145,7 @@ namespace zrpc {
                 DebugLog << "Coroutine::~Coroutine [corId:" << m_cor_id << "] in Heap destroy";
             } else {
                 // 创建在协程池中的，可以没有使用过。所以READY状态就可以析构
-                 ZRPC_ASSERT(m_cor_state == TERM || m_cor_state == READY);
+                 ZRPC_ASSERT(m_cor_state == TERM || (m_cor_state == READY && m_cor_need_resume == false));
                 // free任务交给协程池去做
                 // ToDo 析构在MemoryPool中创建的协程
 
@@ -168,7 +170,8 @@ namespace zrpc {
     /* 这里为了简化状态管理，强制只有TERM状态的协程才可以重置，但其实刚创建好但没执行过的协程也应该允许重置的 */
     void Coroutine::resetCallBack(std::function<void()> cb) {
         ZRPC_ASSERT(m_cor_stack_ptr);      // 当前协程栈指针存在，说明是子协程
-        ZRPC_ASSERT(m_cor_state == TERM);  // 协程在中止状态才可以重设回调
+        /* 协程在中止状态才可以重设回调 or 协程创建在协程池中，状态是READY，同时要么已经执行完回调，要么没有任务 */
+        ZRPC_ASSERT(m_cor_state == TERM || (m_cor_state == READY && m_cor_need_resume == false));
 
         m_cor_cb = std::move(cb);
         if(getcontext(&m_cor_ctx)) {
@@ -214,6 +217,7 @@ namespace zrpc {
         t_current_run_time = nullptr;
 
         if(m_cor_state != TERM) { // 子协程没执行完，还可以回来继续执行
+            m_cor_need_resume = true;
             m_cor_state = READY;
         }
 
@@ -225,7 +229,7 @@ namespace zrpc {
     void Coroutine::resume() {
        // std::cout << "reach resume" << std::endl;
 
-        ZRPC_ASSERT(m_cor_state != RUNNING && m_cor_state != TERM); // 当前实例还是子协程，处于READY状态
+        ZRPC_ASSERT(m_cor_state != RUNNING && m_cor_state != TERM && m_cor_need_resume == true); // 当前实例还是子协程，处于READY状态
         t_current_coroutine = this;
 
         t_current_run_time  = this->getRunTime();
@@ -245,9 +249,10 @@ namespace zrpc {
         Coroutine::ptr cur = t_current_coroutine->shared_from_this(); // t_current_coroutine 引用计数加1
         ZRPC_ASSERT(cur);
 
-        cur->m_cor_cb();             // 执行协程的回调
-        cur->m_cor_cb    = nullptr;  // 执行完成后置空
-        cur->m_cor_state = TERM;
+        cur->m_cor_cb();                   // 执行协程的回调
+        cur->m_cor_cb          = nullptr;  // 执行完成后置空
+        cur->m_cor_state       = TERM;
+        cur->m_cor_need_resume = false;
 
         auto raw_ptr = cur.get();
         cur.reset();                 // 手动让t_current_coroutine的引用计数减1
@@ -283,6 +288,10 @@ namespace zrpc {
 
     RunTime* Coroutine::GetCurrentRunTime() {
         return t_current_run_time;
+    }
+
+    void setCurrentRunTime(RunTime* v) {
+        t_current_run_time = v;
     }
 
     uint64_t Coroutine::TotalCoroutines() {

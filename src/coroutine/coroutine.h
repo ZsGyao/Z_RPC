@@ -183,7 +183,7 @@ namespace zrpc {
         std::function<void()> m_cor_cb;                              // 协程调度函数
 
         bool                  m_create_in_memory_pool;               // 栈内存是否从内存池中分配
-
+        bool                  m_cor_need_resume = false;                     // 判断协程是否还需要被唤醒
         uint64_t              m_cor_pool_index      = -1;            // index in coroutine pool
 
         RunTime*              m_cor_run_time;
