@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++11 -O0 -ggdb -Wall -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated -Wno-deprecated-declarations CMakeFiles/test_macro.dir/tests/test_macro.cpp.o -o ../bin/test_macro   -L/usr/local/lib  -Wl,-rpath,/usr/local/lib:/home/zgys/workspace/zRPC/lib ../lib/libsrc.so -ltinyxml2 -lprotobuf 
